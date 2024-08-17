@@ -21,27 +21,6 @@
 
 #define LED_PIN LED_BUILTIN
 
-// ST7735S TFT LCD
-#define ST7735S 1 // there are different (sub-)versions of ST7735
-#define ST7735_CS 20
-#define ST7735_RS 22  // DC
-#define ST7735_SDA 19 // MOSI
-#define ST7735_SCK 18
-#define ST7735_RESET 26
-#define ST7735_MISO -1
-#define ST7735_BUSY -1
-#define ST7735_BL_V05 21 /* V1.1 PCB marking */
-#define ST7735_SPI_HOST SPI3_HOST
-#define SPI_FREQUENCY 40000000
-#define SPI_READ_FREQUENCY 16000000
-#define SCREEN_ROTATE
-#define TFT_HEIGHT DISPLAY_WIDTH
-#define TFT_WIDTH DISPLAY_HEIGHT
-#define TFT_OFFSET_X 26
-#define TFT_OFFSET_Y -1
-#define SCREEN_TRANSITION_FRAMERATE 3 // fps
-#define DISPLAY_FORCE_SMALL_FONTS
-
 #define BATTERY_PIN 26
 // ratio of voltage divider = 3.0 (R17=200k, R18=100k)
 #define ADC_MULTIPLIER 3.1 // 3.0 + a bit for being optimistic
