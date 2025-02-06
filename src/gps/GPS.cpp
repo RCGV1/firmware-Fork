@@ -649,6 +649,7 @@ bool GPS::setup()
             }
             // Turn off unwanted NMEA messages, set update rate
             SEND_UBX_PACKET(0x06, 0x08, _message_1HZ, "set GPS update rate", 500);
+            SEND_UBX_PACKET(0x06, 0x24, _message_CFG_NAV5, "enable flight mode", 500);
             SEND_UBX_PACKET(0x06, 0x01, _message_GLL, "disable NMEA GLL", 500);
             SEND_UBX_PACKET(0x06, 0x01, _message_GSA, "enable NMEA GSA", 500);
             SEND_UBX_PACKET(0x06, 0x01, _message_GSV, "disable NMEA GSV", 500);
