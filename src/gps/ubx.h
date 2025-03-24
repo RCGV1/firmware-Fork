@@ -16,6 +16,25 @@ static uint8_t _message_PMREQ[] PROGMEM = {
     0x02, 0x00, 0x00, 0x00  // Bitfield, set backup = 1
 };
 
+static const uint8_t _message_CFG_NAV5[] PROGMEM = {
+     0xFF, 0xFF,             // mask
+     0x06,                   // dynModel
+     0x02,                   // fixMode
+     0x00, 0x00, 0x00, 0x00, // fixedAlt
+     0x00, 0x00, 0x00, 0x00, // fixedAltVar
+     0x05,                   // minElev
+     0x00,                   // drLimit
+     0xFA, 0x00,             // pDop
+     0xFA, 0x00,             // tDop
+     0x64, 0x00,             // pAcc
+     0x2C, 0x01,             // tAcc
+     0x00,                   // staticHoldThresh
+     0x00,                   // dgpsTimeOut
+     0x00, 0x00, 0x00, 0x00, // reserved2
+     0x00, 0x00, 0x00, 0x00, // reserved3
+     0x00, 0x00, 0x00, 0x00  // reserved4
+ };
+
 static uint8_t _message_PMREQ_10[] PROGMEM = {
     0x00,                   // version (0 for this version)
     0x00, 0x00, 0x00,       // Reserved 1

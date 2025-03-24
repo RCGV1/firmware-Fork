@@ -42,7 +42,7 @@ float CGRadSensSensor::getStaticRadiation()
 {
     // Read a register, following the same pattern as the RCWL9620Sensor
     _wire->beginTransmission(_addr); // Transfer data to addr.
-    _wire->write(0x06);              // Radiation intensity (static period T = 500 sec)
+    _wire->write(0x03);              // Radiation intensity (static period T = 500 sec)
     if (_wire->endTransmission() == 0) {
         if (_wire->requestFrom(_addr, (uint8_t)3)) {
             ; // Request 3 bytes
