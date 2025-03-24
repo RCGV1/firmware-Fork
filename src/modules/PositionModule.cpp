@@ -397,10 +397,10 @@ int32_t PositionModule::runOnce()
                                                                   default_broadcast_interval_secs, numOnlineNodes);
     uint32_t msSinceLastSend = now - lastGpsSend;
     // Only send packets if the channel util. is less than 25% utilized or we're a tracker with less than 40% utilized.
-    if (!airTime->isTxAllowedChannelUtil(config.device.role != meshtastic_Config_DeviceConfig_Role_TRACKER &&
-                                         config.device.role != meshtastic_Config_DeviceConfig_Role_TAK_TRACKER)) {
-        return RUNONCE_INTERVAL;
-    }
+    // if (!airTime->isTxAllowedChannelUtil(config.device.role != meshtastic_Config_DeviceConfig_Role_TRACKER &&
+    //                                      config.device.role != meshtastic_Config_DeviceConfig_Role_TAK_TRACKER)) {
+    //     return RUNONCE_INTERVAL;
+    // }
 
     if (lastGpsSend == 0 || msSinceLastSend >= intervalMs) {
         if (nodeDB->hasValidPosition(node)) {
