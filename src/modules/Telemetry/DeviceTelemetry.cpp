@@ -185,6 +185,10 @@ bool DeviceTelemetryModule::sendTelemetry(NodeNum dest, bool phoneOnly)
     p->decoded.want_response = false;
     p->priority = meshtastic_MeshPacket_Priority_BACKGROUND;
 
+    // Use broadcast hop limit for telemetry broadcasts
+    p->hop_limit = Default::getBroadcastHopLimit();
+    LOG_DEBUG("Using broadcast hop limit %d for device telemetry", p->hop_limit);
+
     nodeDB->updateTelemetry(nodeDB->getNodeNum(), telemetry, RX_SRC_LOCAL);
     if (phoneOnly) {
         LOG_INFO("Send packet to phone");

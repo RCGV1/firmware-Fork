@@ -1,4 +1,5 @@
 #include "SerialModule.h"
+#include "Default.h"
 #include "GeoCoord.h"
 #include "MeshService.h"
 #include "NMEAWPL.h"
@@ -314,6 +315,9 @@ void SerialModule::sendTelemetry(meshtastic_Telemetry m)
         pb_encode_to_bytes(p->decoded.payload.bytes, sizeof(p->decoded.payload.bytes), &meshtastic_Telemetry_msg, &m);
     p->to = NODENUM_BROADCAST;
     p->decoded.want_response = false;
+    // Use broadcast hop limit for telemetry broadcasts
+    p->hop_limit = Default::getBroadcastHopLimit();
+    LOG_DEBUG("Using broadcast hop limit %d for serial telemetry", p->hop_limit);
     if (config.device.role == meshtastic_Config_DeviceConfig_Role_SENSOR) {
         p->want_ack = true;
         p->priority = meshtastic_MeshPacket_Priority_HIGH;

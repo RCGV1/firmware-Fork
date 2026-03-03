@@ -388,6 +388,10 @@ void PositionModule::sendOurPosition(NodeNum dest, bool wantReplies, uint8_t cha
         p->priority = meshtastic_MeshPacket_Priority_BACKGROUND;
     prevPacketId = p->id;
 
+    // Use broadcast hop limit for position broadcasts
+    p->hop_limit = Default::getBroadcastHopLimit();
+    LOG_DEBUG("Using broadcast hop limit %d for position", p->hop_limit);
+
     if (channel > 0)
         p->channel = channel;
 

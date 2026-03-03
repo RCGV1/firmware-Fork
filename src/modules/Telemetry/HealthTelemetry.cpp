@@ -244,6 +244,11 @@ bool HealthTelemetryModule::sendTelemetry(NodeNum dest, bool phoneOnly)
             p->priority = meshtastic_MeshPacket_Priority_RELIABLE;
         else
             p->priority = meshtastic_MeshPacket_Priority_BACKGROUND;
+
+        // Use broadcast hop limit for telemetry broadcasts
+        p->hop_limit = Default::getBroadcastHopLimit();
+        LOG_DEBUG("Using broadcast hop limit %d for health telemetry", p->hop_limit);
+
         // release previous packet before occupying a new spot
         if (lastMeasurementPacket != nullptr)
             packetPool.release(lastMeasurementPacket);

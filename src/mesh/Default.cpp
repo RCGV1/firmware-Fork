@@ -65,3 +65,10 @@ uint8_t Default::getConfiguredOrDefaultHopLimit(uint8_t configured)
     return (configured >= HOP_MAX) ? HOP_MAX : config.lora.hop_limit;
 #endif
 }
+
+uint8_t Default::getBroadcastHopLimit()
+{
+    // Use broadcast_hop_limit if configured, otherwise default to 3
+    // This is used for telemetry, position, and other auto broadcasts
+    return (config.lora.broadcast_hop_limit > 0 ? config.lora.broadcast_hop_limit : 3);
+}

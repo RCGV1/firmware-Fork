@@ -1,4 +1,5 @@
 #include "NextHopRouter.h"
+#include "Default.h"
 #include "MeshTypes.h"
 #include "meshUtils.h"
 #if !MESHTASTIC_EXCLUDE_TRACEROUTE
@@ -132,6 +133,13 @@ bool NextHopRouter::perhapsRebroadcast(const meshtastic_MeshPacket *p)
                 if (p->next_hop == NO_NEXT_HOP_PREFERENCE || p->next_hop == nodeDB->getLastByteOfNodeNum(getNodeNum())) {
                     meshtastic_MeshPacket *tosend = packetPool.allocCopy(*p); // keep a copy because we will be sending it
                     LOG_INFO("Rebroadcast received message coming from %x", p->relay_node);
+
+                    // Scale down broadcast packets if they exceed our configured broadcast hop limit
+                    uint8_t ourBroadcastHopLimit = Default::getBroadcastHopLimit();
+                    if (tosend->hop_limit > ourBroadcastHopLimit) {
+                        LOG_DEBUG("Scaling down broadcast hop limit from %d to %d", tosend->hop_limit, ourBroadcastHopLimit);
+                        tosend->hop_limit = ourBroadcastHopLimit;
+                    }
 
                     // Use shared logic to determine if hop_limit should be decremented
                     if (shouldDecrementHopLimit(p)) {
