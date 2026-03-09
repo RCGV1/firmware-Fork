@@ -18,6 +18,9 @@
 #include "main.h"
 #include "meshUtils.h" // for pow_of_2
 #include "sleep.h"
+#if defined(USE_SA868_AFSK)
+#include "SA868AFSKInterface.h"
+#endif
 #include <assert.h>
 #include <pb_decode.h>
 #include <pb_encode.h>
@@ -295,6 +298,19 @@ std::unique_ptr<RadioInterface> initLoRa()
 #else // HW_SPI1_DEVICE
     LockingArduinoHal *loraHal = new LockingArduinoHal(SPI, loraSpiSettings);
     RadioLibHAL = loraHal;
+#endif
+
+#if defined(USE_SA868_AFSK)
+    // T-TWR Plus REV 2.1 — SA868 analog FM radio with AFSK1200/AX.25 transport
+    rIf = std::unique_ptr<SA868AFSKInterface>(new SA868AFSKInterface());
+    if (!rIf->init()) {
+        LOG_WARN("SA868 AFSK init failed");
+        rIf = nullptr;
+    } else {
+        LOG_INFO("SA868 AFSK init success");
+        // We do not assign radioType here since it's a LoRa-specific enum and we are not LoRa.
+    }
+    return rIf; // Early return to bypass all LoRa hardware probes
 #endif
 
 // radio init MUST BE AFTER service.init, so we have our radio config settings (from nodedb init)

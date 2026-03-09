@@ -1152,8 +1152,8 @@ bool Power::axpChipInit()
             PMU->setPowerChannelVoltage(XPOWERS_ALDO3, 3300);
             PMU->enablePowerOutput(XPOWERS_ALDO3);
         } else if (HW_VENDOR == meshtastic_HardwareModel_LILYGO_TBEAM_S3_CORE ||
-                   HW_VENDOR == meshtastic_HardwareModel_T_WATCH_S3) {
-            // t-beam s3 core
+                   HW_VENDOR == meshtastic_HardwareModel_T_WATCH_S3 || HW_VENDOR == 9000) {
+            // t-beam s3 core / t-watch s3 / ttwrplus_afsk_uhf
             /**
              * gnss module power channel
              * The default ALDO4 is off, you need to turn on the GNSS power first,
@@ -1162,11 +1162,11 @@ bool Power::axpChipInit()
             PMU->setPowerChannelVoltage(XPOWERS_ALDO4, 3300);
             PMU->enablePowerOutput(XPOWERS_ALDO4);
 
-            // lora radio power channel
+            // lora radio power channel / audio amp switch on T-TWR
             PMU->setPowerChannelVoltage(XPOWERS_ALDO3, 3300);
             PMU->enablePowerOutput(XPOWERS_ALDO3);
 
-            // m.2 interface
+            // m.2 interface / other 3.3v on T-TWR
             PMU->setPowerChannelVoltage(XPOWERS_DCDC3, 3300);
             PMU->enablePowerOutput(XPOWERS_DCDC3);
 
@@ -1183,10 +1183,12 @@ bool Power::axpChipInit()
             PMU->setPowerChannelVoltage(XPOWERS_ALDO1, 3300);
             PMU->enablePowerOutput(XPOWERS_ALDO1);
 
-            // sdcard (T-Beam S3) / gnns (T-Watch S3 Plus) power channel
+            // sdcard (T-Beam S3) / gnns (T-Watch S3 Plus) / microphone on T-TWR
             PMU->setPowerChannelVoltage(XPOWERS_BLDO1, 3300);
-#ifndef T_WATCH_S3
+#if !defined(T_WATCH_S3) && HW_VENDOR != 9000
             PMU->enablePowerOutput(XPOWERS_BLDO1);
+#elif HW_VENDOR == 9000
+            PMU->enablePowerOutput(XPOWERS_BLDO1); // Mic power for T-TWR REV 2.1
 #else
             // DRV2605 power channel
             PMU->setPowerChannelVoltage(XPOWERS_BLDO2, 3300);

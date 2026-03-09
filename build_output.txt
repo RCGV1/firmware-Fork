@@ -1,0 +1,379 @@
+/Users/benjaminfaershtein/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Processing ttwrplus_afsk_uhf (board: ttwrplus_afsk_uhf; platform: 
+platformio/espressif32@6.13.0; framework: arduino)
+--------------------------------------------------------------------------------
+/Users/benjaminfaershtein/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Verbose mode can be enabled via `-v, --verbose` option
+PROGNAME: firmware-ttwrplus_afsk_uhf-2.7.20.b941dab
+ESP32_FS_IMAGE_NAME: littlefs-ttwrplus_afsk_uhf-2.7.20.b941dab
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/ttwrplus_afsk_uhf.html
+PLATFORM: Espressif 32 (6.13.0) > LilyGo T-TWR Plus REV 2.1 (UHF AFSK)
+HARDWARE: ESP32S3 240MHz, 320KB RAM, 16MB Flash
+DEBUG: Current (cmsis-dap) External (cmsis-dap, esp-bridge, esp-builtin, esp-prog, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - framework-arduinoespressif32 @ 3.20017.241212+sha.dcc1105b 
+ - tool-esptoolpy @ 2.41100.0 (4.11.0) 
+ - tool-mklittlefs @ 1.203.210628 (2.3) 
+ - tool-openocd-esp32 @ 2.1100.20220706 (11.0) 
+ - toolchain-riscv32-esp @ 8.4.0+2021r2-patch5 
+ - toolchain-xtensa-esp32s3 @ 8.4.0+2021r2-patch5
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+[nanopb] No generation needed.
+Found 98 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- ESP8266 and ESP32 OLED driver for SSD1306 displays @ 4.4.1
+|-- OneButton @ 2.6.1
+|-- arduino-fsm @ 2.2.0
+|-- TinyGPSPlus @ 1.0.3
+|-- ArduinoThread @ 0.0.0+20260308141847
+|-- Nanopb @ 0.4.91
+|-- ErriezCRC32 @ 1.0.1
+|-- NonBlockingRTTTL @ 1.4.0
+|-- TBPubSubClient @ 2.12.1
+|-- NTPClient @ 3.2.1
+|-- Syslog @ 2.0.0
+|-- Adafruit BusIO @ 1.17.4
+|-- Adafruit Unified Sensor @ 1.1.15
+|-- Adafruit BMP280 Library @ 3.0.0
+|-- Adafruit BMP085 Library @ 1.2.4
+|-- Adafruit BME280 Library @ 2.3.0
+|-- Adafruit DPS310 @ 1.1.6
+|-- Adafruit MCP9808 Library @ 2.0.2
+|-- Adafruit INA260 Library @ 1.5.3
+|-- Adafruit INA219 @ 1.2.3
+|-- Adafruit MPU6050 @ 2.2.9
+|-- Adafruit LIS3DH @ 1.3.0
+|-- Adafruit AHTX0 @ 2.0.6
+|-- Adafruit LSM6DS @ 4.7.4
+|-- Adafruit TSL2591 Library @ 1.4.5
+|-- EmotiBit MLX90632 @ 1.0.8
+|-- Adafruit MLX90614 Library @ 2.1.6
+|-- INA3221 @ 1.0.1
+|-- QMC5883LCompass @ 1.2.3
+|-- DFRobot_RTU @ 1.0.6
+|-- DFRobot_RainfallSensor @ 1.0.0
+|-- INA226 @ 0.6.6
+|-- SparkFun MAX3010x Pulse and Proximity Sensor Library @ 1.1.2
+|-- SparkFun 9DoF IMU Breakout - ICM 20948 - Arduino Library @ 1.3.2
+|-- Adafruit LTR390 Library @ 1.1.2
+|-- Adafruit PCT2075 @ 1.0.6
+|-- DFRobot_BMM150 @ 1.0.0
+|-- Adafruit TSL2561 @ 1.1.3
+|-- BH1750_WE @ 1.1.10
+|-- Adafruit BMP3XX Library @ 2.1.6
+|-- Adafruit MAX1704X @ 1.0.3
+|-- Adafruit SHTC3 Library @ 1.0.2
+|-- Adafruit LPS2X @ 2.0.6
+|-- Adafruit SHT31 Library @ 2.2.2
+|-- Adafruit VEML7700 Library @ 2.1.6
+|-- Adafruit SHT4x Library @ 1.0.5
+|-- SparkFun Qwiic Scale NAU7802 Arduino Library @ 1.0.6
+|-- ClosedCube OPT3001 @ 1.1.2
+|-- DFRobot_LarkWeatherStation @ 1.0.0
+|-- Sensirion Core @ 0.7.3
+|-- Sensirion I2C SCD4x @ 1.1.0
+|-- Sensirion I2C SFA3x @ 1.0.0
+|-- Sensirion I2C SCD30 @ 1.0.0
+|-- bsec2 @ 1.10.2610
+|-- BME68x Sensor library @ 1.3.40408
+|-- RadioLib @ 7.6.0
+|-- esp32_https_server @ 1.0.0
+|-- NimBLE-Arduino @ 1.4.3
+|-- libpax @ 1.1.0
+|-- XPowersLib @ 0.3.3
+|-- Crypto @ 0.4.0
+|-- ESP32 Codec2 @ 1.0.1
+|-- WiFi @ 2.0.0
+|-- SD @ 2.0.0
+|-- SPI @ 2.0.0
+|-- Wire @ 2.0.0
+|-- Preferences @ 2.0.0
+|-- WebServer @ 2.0.0
+|-- ESPmDNS @ 2.0.0
+|-- LittleFS @ 2.0.0
+|-- WiFiClientSecure @ 2.0.0
+|-- Adafruit NeoPixel @ 1.15.4
+|-- ESP32 Async UDP @ 2.0.0
+Building in release mode
+Using meshtastic platformio-custom.py, firmware version 2.7.20.b941dab on ttwrplus_afsk_uhf
+Using flags:
+-DAPP_VERSION=2.7.20.b941dab
+-DAPP_VERSION_SHORT=2.7.20
+-DAPP_ENV=ttwrplus_afsk_uhf
+-DAPP_REPO=RCGV1/firmware-Fork
+-DBUILD_EPOCH=1772956800
+-DUSERPREFS_RINGTONE_RTTTL=\"24:d=32,o=5,b=565:f6,p,f6,4p,p,f6,p,f6,2p,p,b6,p,b6,p,b6,p,b6,p,b,p,b,p,b,p,b,p,b,p,b,p,b,p,b,1p.,2p.,p\"
+-DUSERPREFS_TZ_STRING=\"tzplaceholder                                         \"
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/RadioInterface.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/SA868AFSKInterface.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/compression/unishox2.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/admin.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/apponly.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/atak.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/cannedmessages.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/channel.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/clientonly.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/config.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/connection_status.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/device_ui.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/deviceonly.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/interdevice.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/localonly.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/mesh.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/module_config.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/mqtt.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/paxcount.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/portnums.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/powermon.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/remote_hardware.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/rtttl.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/storeforward.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/telemetry.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/generated/meshtastic/xmodem.pb.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/http/ContentHandler.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/http/ContentHelper.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/http/WebServer.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/mesh-pb-constants.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/transport/AX25UIFramer.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/mesh/wifi/WiFiAPClient.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/meshUtils.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/AdminModule.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/AtakPluginModule.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/CannedMessageModule.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/DetectionSensorModule.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/DropzoneModule.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/ExternalNotificationModule.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/GenericThreadModule.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/KeyVerificationModule.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/Modules.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/NeighborInfoModule.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/NodeInfoModule.cpp.o
+Compiling .pio/build/ttwrplus_afsk_uhf/src/modules/OnScreenKeyboardModule.cpp.o
+In file included from src/configuration.h:37,
+                 from src/mesh/MemoryPool.h:9,
+                 from src/mesh/RadioInterface.h:3,
+                 from src/mesh/RadioInterface.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/MemoryPool.h:9,
+                 from src/mesh/RadioInterface.h:3,
+                 from src/mesh/SA868AFSKInterface.h:14,
+                 from src/mesh/SA868AFSKInterface.cpp:6:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/mesh/RadioInterface.cpp:22:
+src/mesh/SA868AFSKInterface.h:35:17: error: 'const char* SA868AFSKInterface::getName() const' marked 'override', but does not override
+     const char *getName() const override { return "SA868 AFSK"; }
+                 ^~~~~~~
+src/mesh/SA868AFSKInterface.h:36:17: error: 'const char* SA868AFSKInterface::getShortName() const' marked 'override', but does not override
+     const char *getShortName() const override { return "AFSK"; }
+                 ^~~~~~~~~~~~
+src/mesh/RadioInterface.cpp: In function 'std::unique_ptr<RadioInterface> initLoRa()':
+src/mesh/RadioInterface.cpp:305:70: warning: 'new' of type 'SA868AFSKInterface' with extended alignment 16 [-Waligned-new=]
+     rIf = std::unique_ptr<SA868AFSKInterface>(new SA868AFSKInterface());
+                                                                      ^
+src/mesh/RadioInterface.cpp:305:70: note: uses 'void* operator new(std::size_t)', which does not have an alignment parameter
+src/mesh/RadioInterface.cpp:305:70: note: use '-faligned-new' to enable C++17 over-aligned new support
+*** [.pio/build/ttwrplus_afsk_uhf/src/mesh/RadioInterface.cpp.o] Error 1
+In file included from src/mesh/SA868AFSKInterface.cpp:6:
+src/mesh/SA868AFSKInterface.h:35:17: error: 'const char* SA868AFSKInterface::getName() const' marked 'override', but does not override
+     const char *getName() const override { return "SA868 AFSK"; }
+                 ^~~~~~~
+src/mesh/SA868AFSKInterface.h:36:17: error: 'const char* SA868AFSKInterface::getShortName() const' marked 'override', but does not override
+     const char *getShortName() const override { return "AFSK"; }
+                 ^~~~~~~~~~~~
+*** [.pio/build/ttwrplus_afsk_uhf/src/mesh/SA868AFSKInterface.cpp.o] Error 1
+In file included from src/configuration.h:37,
+                 from src/mesh/mesh-pb-constants.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/http/WebServer.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/wifi/WiFiAPClient.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/DebugConfiguration.h:3,
+                 from src/meshUtils.h:2,
+                 from src/meshUtils.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/CryptoEngine.h:5,
+                 from src/mesh/Channels.h:3,
+                 from src/mesh/MeshModule.h:3,
+                 from src/mesh/SinglePortModule.h:2,
+                 from src/mesh/ProtobufModule.h:2,
+                 from src/modules/AtakPluginModule.h:2,
+                 from src/modules/AtakPluginModule.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/CryptoEngine.h:5,
+                 from src/mesh/Channels.h:3,
+                 from src/mesh/MeshModule.h:3,
+                 from src/mesh/SinglePortModule.h:2,
+                 from src/mesh/ProtobufModule.h:2,
+                 from src/modules/AdminModule.h:5,
+                 from src/modules/AdminModule.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/transport/AX25UIFramer.cpp:7:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/modules/CannedMessageModule.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/CryptoEngine.h:5,
+                 from src/mesh/Channels.h:3,
+                 from src/mesh/MeshModule.h:3,
+                 from src/mesh/SinglePortModule.h:2,
+                 from src/modules/DetectionSensorModule.h:2,
+                 from src/modules/DetectionSensorModule.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/MemoryPool.h:9,
+                 from src/mesh/MeshTypes.h:5,
+                 from src/mesh/NodeDB.h:11,
+                 from src/mesh/http/ContentHandler.cpp:2:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/CryptoEngine.h:5,
+                 from src/mesh/Channels.h:3,
+                 from src/mesh/MeshModule.h:3,
+                 from src/mesh/SinglePortModule.h:2,
+                 from src/modules/ExternalNotificationModule.h:3,
+                 from src/modules/ExternalNotificationModule.cpp:16:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/CryptoEngine.h:5,
+                 from src/mesh/Channels.h:3,
+                 from src/mesh/MeshModule.h:3,
+                 from src/modules/GenericThreadModule.h:3,
+                 from src/modules/GenericThreadModule.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/CryptoEngine.h:5,
+                 from src/mesh/Channels.h:3,
+                 from src/mesh/MeshModule.h:3,
+                 from src/mesh/SinglePortModule.h:2,
+                 from src/mesh/ProtobufModule.h:2,
+                 from src/modules/KeyVerificationModule.h:3,
+                 from src/modules/KeyVerificationModule.cpp:2:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/modules/Modules.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/CryptoEngine.h:5,
+                 from src/mesh/Channels.h:3,
+                 from src/mesh/MeshModule.h:3,
+                 from src/mesh/SinglePortModule.h:2,
+                 from src/mesh/ProtobufModule.h:2,
+                 from src/modules/NeighborInfoModule.h:2,
+                 from src/modules/NeighborInfoModule.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/mesh/CryptoEngine.h:5,
+                 from src/mesh/Channels.h:3,
+                 from src/mesh/MeshModule.h:3,
+                 from src/mesh/SinglePortModule.h:2,
+                 from src/mesh/ProtobufModule.h:2,
+                 from src/modules/NodeInfoModule.h:2,
+                 from src/modules/NodeInfoModule.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from src/configuration.h:37,
+                 from src/modules/OnScreenKeyboardModule.cpp:1:
+variants/esp32s3/ttwrplus_afsk_uhf/variant.h:65: warning: "USER_BUTTON" redefined
+ #define USER_BUTTON BUTTON_PIN
+ 
+<command-line>: note: this is the location of the previous definition
+In file included from .pio/libdeps/ttwrplus_afsk_uhf/esp32_https_server/src/HTTPServer.hpp:11,
+                 from .pio/libdeps/ttwrplus_afsk_uhf/esp32_https_server/src/HTTPSServer.hpp:16,
+                 from src/mesh/http/WebServer.cpp:45:
+/Users/benjaminfaershtein/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/lwip/lwip/src/include/lwip/netdb.h:75: warning: "NO_DATA" redefined
+ #define NO_DATA         211
+ 
+In file included from .pio/libdeps/ttwrplus_afsk_uhf/DFRobot_BMM150/DFRobot_BMM150.h:13,
+                 from src/motion/BMM150Sensor.h:10,
+                 from src/motion/AccelerometerThread.h:16,
+                 from src/main.h:69,
+                 from src/mesh/http/WebServer.cpp:5:
+.pio/libdeps/ttwrplus_afsk_uhf/DFRobot_BMM150/bmm150_defs.h:430: note: this is the location of the previous definition
+ #define NO_DATA                          -32768
+ 
+In file included from .pio/libdeps/ttwrplus_afsk_uhf/esp32_https_server/src/HTTPServer.hpp:11,
+                 from .pio/libdeps/ttwrplus_afsk_uhf/esp32_https_server/src/HTTPSServer.hpp:16,
+                 from src/mesh/http/ContentHandler.cpp:40:
+/Users/benjaminfaershtein/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/lwip/lwip/src/include/lwip/netdb.h:75: warning: "NO_DATA" redefined
+ #define NO_DATA         211
+ 
+In file included from .pio/libdeps/ttwrplus_afsk_uhf/DFRobot_BMM150/DFRobot_BMM150.h:13,
+                 from src/motion/BMM150Sensor.h:10,
+                 from src/motion/AccelerometerThread.h:16,
+                 from src/main.h:69,
+                 from src/mesh/http/ContentHandler.cpp:6:
+.pio/libdeps/ttwrplus_afsk_uhf/DFRobot_BMM150/bmm150_defs.h:430: note: this is the location of the previous definition
+ #define NO_DATA                          -32768
+ 
+========================= [FAILED] Took 27.67 seconds =========================
+
+Environment        Status    Duration
+-----------------  --------  ------------
+ttwrplus_afsk_uhf  FAILED    00:00:27.667
+==================== 1 failed, 0 succeeded in 00:00:27.667 ====================

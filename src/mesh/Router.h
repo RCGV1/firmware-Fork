@@ -63,6 +63,9 @@ class Router : protected concurrency::OSThread, protected PacketHistory
     /** Return Underlying interface's TX queue status */
     meshtastic_QueueStatus getQueueStatus();
 
+    /** Return true if the radio is currently sending */
+    bool isSending() { return iface && iface->isSending(); }
+
     /**
      * @return our local nodenum */
     NodeNum getNodeNum();

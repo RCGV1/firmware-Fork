@@ -8,18 +8,29 @@ RotaryEncoderInterruptImpl1::RotaryEncoderInterruptImpl1() : RotaryEncoderInterr
 
 bool RotaryEncoderInterruptImpl1::init()
 {
+#if !defined(TTWRPLUS_AFSK_UHF)
     if (!moduleConfig.canned_message.rotary1_enabled) {
         // Input device is disabled.
         disable();
         return false;
     }
+#endif
 
+#if defined(TTWRPLUS_AFSK_UHF)
+    uint8_t pinA = ENCODER_A_PIN;
+    uint8_t pinB = ENCODER_B_PIN;
+    uint8_t pinPress = ENCODER_BIT_P;
+    input_broker_event eventCw = INPUT_BROKER_UP;
+    input_broker_event eventCcw = INPUT_BROKER_DOWN;
+    input_broker_event eventPressed = INPUT_BROKER_SELECT;
+#else
     uint8_t pinA = moduleConfig.canned_message.inputbroker_pin_a;
     uint8_t pinB = moduleConfig.canned_message.inputbroker_pin_b;
     uint8_t pinPress = moduleConfig.canned_message.inputbroker_pin_press;
     input_broker_event eventCw = static_cast<input_broker_event>(moduleConfig.canned_message.inputbroker_event_cw);
     input_broker_event eventCcw = static_cast<input_broker_event>(moduleConfig.canned_message.inputbroker_event_ccw);
     input_broker_event eventPressed = static_cast<input_broker_event>(moduleConfig.canned_message.inputbroker_event_press);
+#endif
     input_broker_event eventPressedLong = INPUT_BROKER_SELECT_LONG;
 
     // moduleConfig.canned_message.ext_notification_module_output

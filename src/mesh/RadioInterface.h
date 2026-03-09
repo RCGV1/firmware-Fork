@@ -136,6 +136,11 @@ class RadioInterface
      */
     virtual bool canSleep() { return true; }
 
+    /**
+     * Return true if we are currently sending a packet
+     */
+    virtual bool isSending() { return sendingPacket != nullptr; }
+
     virtual bool wideLora() { return false; }
 
     /// Prepare hardware for sleep.  Call this _only_ for deep sleep, not needed for light sleep.

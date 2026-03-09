@@ -38,6 +38,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "draw/NodeListRenderer.h"
 #include "draw/NotificationRenderer.h"
 #include "draw/UIRenderer.h"
+#if defined(USE_SA868_AFSK)
+#include "draw/SA868Renderer.h"
+#endif
 #include "modules/CannedMessageModule.h"
 
 #if !MESHTASTIC_EXCLUDE_GPS
@@ -1064,6 +1067,12 @@ void Screen::setFrames(FrameFocus focus)
         normalFrames[numframes++] = graphics::UIRenderer::drawDeviceFocused;
         indicatorIcons.push_back(icon_home);
     }
+
+#if defined(USE_SA868_AFSK)
+    fsi.positions.sa868 = numframes;
+    normalFrames[numframes++] = graphics::SA868Renderer::drawSA868Frame;
+    indicatorIcons.push_back(icon_radio);
+#endif
 
     fsi.positions.textMessage = numframes;
     normalFrames[numframes++] = graphics::MessageRenderer::drawTextMessageFrame;
