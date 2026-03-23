@@ -39,6 +39,10 @@ struct PendingPacket {
     /** Starts at NUM_RETRANSMISSIONS -1 and counts down.  Once zero it will be removed from the list */
     uint8_t numRetransmissions = 0;
 
+    /** Snapshot of numRetransmissions at construction time, used by stopRetransmission to detect
+     *  whether at least one retransmit has already fired before cancelling from the TX queue. */
+    uint8_t initialNumRetransmissions = 0;
+
     /** Incremented on each retransmission; used to escalate the LoRa coding rate per attempt */
     uint8_t retransmitAttempt = 0;
 

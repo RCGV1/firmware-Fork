@@ -16,6 +16,7 @@ PendingPacket::PendingPacket(meshtastic_MeshPacket *p, uint8_t numRetransmission
 {
     packet = p;
     this->numRetransmissions = numRetransmissions - 1; // We subtract one, because we assume the user just did the first send
+    this->initialNumRetransmissions = this->numRetransmissions;
 }
 
 /**
@@ -283,7 +284,7 @@ bool NextHopRouter::stopRetransmission(GlobalPacketId key)
         auto p = old->packet;
         /* Only when we already transmitted a packet via LoRa, we will cancel the packet in the Tx queue
           to avoid canceling a transmission if it was ACKed super fast via MQTT */
-        if (old->numRetransmissions < NUM_RELIABLE_RETX - 1) {
+        if (old->numRetransmissions < old->initialNumRetransmissions) {
             // We only cancel it if we are the original sender or if we're not a router(_late)
             if (isFromUs(p) || roleAllowsCancelingFromTxQueue(p)) {
                 // remove the 'original' (identified by originator and packet->id) from the txqueue and free it

@@ -419,11 +419,10 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
                 setReceivedMessage(); // ensure runOnce wakes for timeout tracking
                 return meshtastic_Routing_Error_NONE;
             }
-            // Second attempt for same dest (or already have a pending retry): NAK now
+            // Retry slot already occupied — NAK this packet but keep the queued one waiting.
+            // Dropping the queued packet here would silently lose a DM the user already sent.
             if (encodeResult == meshtastic_Routing_Error_PKI_SEND_FAIL_PUBLIC_KEY && pkiRetryPacket != nullptr) {
-                packetPool.release(pkiRetryPacket);
-                pkiRetryPacket = nullptr;
-                pkiRetryDest = 0;
+                LOG_WARN("PKI retry slot busy (waiting for 0x%08x) — NAKing new PKI failure for 0x%08x", pkiRetryDest, p->to);
             }
 #endif
             packetPool.release(p_decoded);

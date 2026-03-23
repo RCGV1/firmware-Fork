@@ -22,10 +22,14 @@ ErrorCode FloodingRouter::send(meshtastic_MeshPacket *p)
     p->relay_node = getNodeNum();
     wasSeenRecently(p); // FIXME, move this to a sniffSent method
 
-    // For broadcast relays (not originating from us), clear relay_node so downstream nodes
-    // can continue flooding. The designation is consumed after the first relay.
-    // The packet history has already recorded us as a relayer above.
+    // Clear relay_node in two cases so the relay_node gate in perhapsRebroadcast doesn't
+    // block forwarding:
+    //   1. Broadcast relays (not from us): any downstream node should continue flooding.
+    //   2. DMs with no explicit next-hop (flood-fallback last retransmit from doRetransmissions):
+    //      relay_node=originator with next_hop=0 would cause every intermediate to refuse relay.
     if (!isFromUs(p) && isBroadcast(p->to)) {
+        p->relay_node = NO_RELAY_NODE;
+    } else if (!isBroadcast(p->to) && p->next_hop == NO_NEXT_HOP_PREFERENCE) {
         p->relay_node = NO_RELAY_NODE;
     }
 
