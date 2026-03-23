@@ -302,15 +302,6 @@ ErrorCode Router::sendLocal(meshtastic_MeshPacket *p, RxSource src)
         if (src == RX_SRC_USER && p->want_ack && p->hop_limit == 0) {
             p->hop_limit = Default::getConfiguredOrDefaultHopLimit(config.lora.hop_limit);
         }
-        // Directed (unicast) packets always use the full hop limit; broadcast packets use the smaller broadcast limit.
-        // allocForSending sets the broadcast default, so upgrade directed packets here.
-        if (!isBroadcast(p->to)) {
-            uint8_t bcastLimit = Default::getConfiguredOrDefaultBroadcastHopLimit(config.lora.broadcast_hop_limit);
-            if (p->hop_limit <= bcastLimit) {
-                p->hop_limit = Default::getConfiguredOrDefaultHopLimit(config.lora.hop_limit);
-            }
-        }
-
         return send(p);
     }
 }

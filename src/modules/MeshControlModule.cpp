@@ -144,16 +144,12 @@ bool MeshControlModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, 
         return false;
     }
 
-    LOG_INFO("MeshControl: authenticated packet from 0x%08x (seq=%u, mesh='%s')", mp.from, p->seq_num, p->mesh_name);
-
-    devicestate.last_accepted_mesh_control_seq_num = p->seq_num;
-    nodeDB->saveToDisk(SEGMENT_DEVICESTATE);
-    lastAcceptedMs = millis();
-
     if (!p->has_settings) {
         LOG_DEBUG("MeshControl: packet has no settings payload");
         return false;
     }
+
+    LOG_INFO("MeshControl: authenticated packet from 0x%08x (seq=%u, mesh='%s')", mp.from, p->seq_num, p->mesh_name);
 
     if (mc.accept_policy == meshtastic_Config_MeshControlConfig_AcceptPolicy_PROMPT) {
         // If a previous PROMPT is still awaiting user approval, reject the new packet to avoid
@@ -165,6 +161,9 @@ bool MeshControlModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, 
         pendingSettings = p->settings;
         pendingSeqNum = p->seq_num;
         pendingActivation = false; // PROMPT mode doesn't use the timer path
+        devicestate.last_accepted_mesh_control_seq_num = p->seq_num;
+        nodeDB->saveToDisk(SEGMENT_DEVICESTATE);
+        lastAcceptedMs = millis();
         sendApprovalPrompt(*p);
         return false;
     }
@@ -185,10 +184,16 @@ bool MeshControlModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, 
         pendingSettings = p->settings;
         pendingSeqNum = p->seq_num;
         pendingActivation = true;
+        devicestate.last_accepted_mesh_control_seq_num = p->seq_num;
+        nodeDB->saveToDisk(SEGMENT_DEVICESTATE);
+        lastAcceptedMs = millis();
         activateAtMs = millis() + p->activation_delay_secs * 1000UL;
         setIntervalFromNow(p->activation_delay_secs * 1000UL);
         enabled = true;
     } else {
+        devicestate.last_accepted_mesh_control_seq_num = p->seq_num;
+        nodeDB->saveToDisk(SEGMENT_DEVICESTATE);
+        lastAcceptedMs = millis();
         applySettings(p->settings);
     }
 
