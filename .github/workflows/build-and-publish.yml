@@ -193,8 +193,6 @@ jobs:
           PAGES_DIR="$GITHUB_WORKSPACE/firmware-pages"
           STAGING_DIR="$GITHUB_WORKSPACE/staging/$RELEASE_DIR"
           ROOT_MANIFEST="$PAGES_DIR/firmware-$VERSION.json"
-          ROOT_ZIP="$PAGES_DIR/firmware-$VERSION.zip"
-
           mkdir -p "$STAGING_DIR"
           find "$GITHUB_WORKSPACE/artifacts" -maxdepth 1 -type f \
             \( -name '*.bin' -o -name '*.uf2' -o -name '*.hex' -o -name '*.zip' -o -name '*.json' \) \
@@ -254,19 +252,13 @@ jobs:
               f.write('\n')
           PY
 
-          rm -f "$ROOT_ZIP"
-          (
-            cd "$PAGES_DIR"
-            zip -rq "firmware-$VERSION.zip" "$RELEASE_DIR"
-          )
-
       - name: Commit and push
         shell: bash
         run: |
           cd firmware-pages
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add "firmware-$VERSION" "firmware-$VERSION.json" "firmware-$VERSION.zip" "latest.json"
+          git add "firmware-$VERSION" "firmware-$VERSION.json" "latest.json"
           git diff --cached --quiet && exit 0
           git commit -m "Publish firmware $VERSION"
           git push origin gh-pages
