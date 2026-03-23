@@ -35,8 +35,17 @@ ErrorCode NextHopRouter::send(meshtastic_MeshPacket *p)
 
     // For packets we originate, restore the relay designation the caller set (dm_relay_node or
     // broadcast preferred-relay). Relayed packets keep relay_node = getNodeNum() (who just relayed).
-    if (isFromUs(p) && userRelayNode != NO_RELAY_NODE) {
-        p->relay_node = userRelayNode;
+    if (isFromUs(p)) {
+        if (userRelayNode != NO_RELAY_NODE) {
+            // Explicit relay designation (dm_relay_node or broadcast preferred relay): restore it
+            p->relay_node = userRelayNode;
+        } else if (p->next_hop == NO_NEXT_HOP_PREFERENCE) {
+            // No route and no explicit relay: clear relay_node so flooding can work.
+            // If we leave relay_node = getNodeNum(), all receivers see a designated-relay that
+            // isn't them and refuse to forward — breaking multi-hop broadcast and unrouted DMs.
+            p->relay_node = NO_RELAY_NODE;
+        }
+        // else: route is known (next_hop set), keep relay_node = getNodeNum() to identify sender
     }
 
     // If it's from us, ReliableRouter already handles retransmissions if want_ack is set. If a next hop is set and hop limit is

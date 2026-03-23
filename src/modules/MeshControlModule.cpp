@@ -124,8 +124,13 @@ bool MeshControlModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, 
         return false;
     }
 
-    // 5. Replay protection: seq_num must be greater than the last accepted (persisted across reboots)
-    if (p->seq_num != 0 && p->seq_num <= devicestate.last_accepted_mesh_control_seq_num) {
+    // 5. Replay protection: seq_num must be non-zero and strictly greater than the last accepted.
+    // seq_num == 0 is rejected unconditionally — it cannot be used to bypass replay protection.
+    if (p->seq_num == 0) {
+        LOG_WARN("MeshControl: seq_num=0 not permitted – dropping");
+        return false;
+    }
+    if (p->seq_num <= devicestate.last_accepted_mesh_control_seq_num) {
         LOG_WARN("MeshControl: stale seq_num %u (last accepted %u) – dropping", p->seq_num,
                  devicestate.last_accepted_mesh_control_seq_num);
         return false;
@@ -151,17 +156,34 @@ bool MeshControlModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, 
     }
 
     if (mc.accept_policy == meshtastic_Config_MeshControlConfig_AcceptPolicy_PROMPT) {
-        // Stash settings and ask the user
+        // If a previous PROMPT is still awaiting user approval, reject the new packet to avoid
+        // the user unknowingly approving settings that were silently swapped out.
+        if (pendingSeqNum != 0) {
+            LOG_WARN("MeshControl: PROMPT already pending (seq=%u), rejecting new packet (seq=%u)", pendingSeqNum, p->seq_num);
+            return false;
+        }
         pendingSettings = p->settings;
+        pendingSeqNum = p->seq_num;
         pendingActivation = false; // PROMPT mode doesn't use the timer path
         sendApprovalPrompt(*p);
         return false;
     }
 
-    // AUTO mode: schedule or apply immediately
+    // AUTO mode: cancel any stale deferred activation before applying or scheduling new settings.
+    // Without this, an old delayed packet would fire after the new one and revert the changes.
+    if (pendingActivation) {
+        LOG_INFO("MeshControl: cancelling pending deferred activation (seq=%u) for new packet (seq=%u)", pendingSeqNum,
+                 p->seq_num);
+        pendingActivation = false;
+        pendingSettings = meshtastic_MeshControlSettings_init_zero;
+        pendingSeqNum = 0;
+        disable();
+    }
+
     if (p->activation_delay_secs > 0) {
         LOG_INFO("MeshControl: will apply settings in %u s", p->activation_delay_secs);
         pendingSettings = p->settings;
+        pendingSeqNum = p->seq_num;
         pendingActivation = true;
         activateAtMs = millis() + p->activation_delay_secs * 1000UL;
         setIntervalFromNow(p->activation_delay_secs * 1000UL);
@@ -177,9 +199,11 @@ bool MeshControlModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, 
 int32_t MeshControlModule::runOnce()
 {
     if (pendingActivation && millis() >= activateAtMs) {
-        LOG_INFO("MeshControl: applying deferred settings");
+        LOG_INFO("MeshControl: applying deferred settings (seq=%u)", pendingSeqNum);
         pendingActivation = false;
+        pendingSeqNum = 0;
         applySettings(pendingSettings);
+        pendingSettings = meshtastic_MeshControlSettings_init_zero;
         disable();
     }
     return INT32_MAX;
@@ -194,21 +218,27 @@ void MeshControlModule::applySettings(const meshtastic_MeshControlSettings &s)
 
     // --- LoRa settings ---
     if (mc.allow_lora_config) {
-        if (s.has_modem_preset) {
-            config.lora.modem_preset = s.modem_preset;
-            config.lora.use_preset = true;
+        if (s.has_modem_preset || s.has_override_frequency || s.has_channel_num) {
+            // Apply to a scratch copy so we can validate before committing
+            auto candidateLora = config.lora;
+            if (s.has_modem_preset) {
+                candidateLora.modem_preset = s.modem_preset;
+                candidateLora.use_preset = true;
+            }
+            if (s.has_override_frequency)
+                candidateLora.override_frequency = s.override_frequency;
+            if (s.has_channel_num)
+                candidateLora.channel_num = s.channel_num;
+
+            // Clamp/validate — rejects invalid presets, illegal frequencies, etc.
+            if (!RadioInterface::validateConfigLora(candidateLora)) {
+                LOG_WARN("MeshControl: LoRa config invalid after applying settings, clamping");
+                RadioInterface::clampConfigLora(candidateLora);
+            }
+            config.lora = candidateLora;
             loraChanged = true;
-            LOG_INFO("MeshControl: set modem_preset=%d", s.modem_preset);
-        }
-        if (s.has_override_frequency) {
-            config.lora.override_frequency = s.override_frequency;
-            loraChanged = true;
-            LOG_INFO("MeshControl: set override_frequency=%.3f", s.override_frequency);
-        }
-        if (s.has_channel_num) {
-            config.lora.channel_num = s.channel_num;
-            loraChanged = true;
-            LOG_INFO("MeshControl: set channel_num=%u", s.channel_num);
+            LOG_INFO("MeshControl: applied LoRa settings (preset=%d freq=%.3f ch=%u)", config.lora.modem_preset,
+                     config.lora.override_frequency, config.lora.channel_num);
         }
     }
 
@@ -269,12 +299,11 @@ void MeshControlModule::applySettings(const meshtastic_MeshControlSettings &s)
 // ---------------------------------------------------------------------------
 void MeshControlModule::applyPendingSettings()
 {
-    if (pendingSettings.has_modem_preset || pendingSettings.has_override_frequency || pendingSettings.has_channel_num ||
-        pendingSettings.has_hop_limit || pendingSettings.has_broadcast_hop_limit || pendingSettings.has_position_broadcast_secs ||
-        pendingSettings.has_device_telemetry_interval || pendingSettings.has_node_info_broadcast_secs) {
-        LOG_INFO("MeshControl: user approved pending settings");
+    if (pendingSeqNum != 0) {
+        LOG_INFO("MeshControl: user approved pending settings (seq=%u)", pendingSeqNum);
         applySettings(pendingSettings);
         pendingSettings = meshtastic_MeshControlSettings_init_zero;
+        pendingSeqNum = 0;
     } else {
         LOG_DEBUG("MeshControl: applyPendingSettings called but no settings pending");
     }
@@ -282,8 +311,9 @@ void MeshControlModule::applyPendingSettings()
 
 void MeshControlModule::discardPendingSettings()
 {
-    LOG_INFO("MeshControl: user rejected pending settings");
+    LOG_INFO("MeshControl: user rejected pending settings (seq=%u)", pendingSeqNum);
     pendingSettings = meshtastic_MeshControlSettings_init_zero;
+    pendingSeqNum = 0;
     meshtastic_ClientNotification *cn = clientNotificationPool.allocZeroed();
     if (cn) {
         cn->level = meshtastic_LogRecord_Level_INFO;

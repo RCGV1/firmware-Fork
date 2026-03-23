@@ -36,9 +36,10 @@ class MeshControlModule : public ProtobufModule<meshtastic_MeshControlPacket>, p
     virtual int32_t runOnce() override;
 
   private:
-    // Pending activation state (used when activation_delay_secs > 0)
+    // Pending activation state (used when activation_delay_secs > 0 or PROMPT mode)
     bool pendingActivation = false;
     uint32_t activateAtMs = 0;
+    uint32_t pendingSeqNum = 0; // seq_num of the packet whose settings are pending
     meshtastic_MeshControlSettings pendingSettings = meshtastic_MeshControlSettings_init_zero;
 
     /** Compute HMAC-SHA256(key, msg, msgLen) → out[32].
