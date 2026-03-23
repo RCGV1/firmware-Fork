@@ -8,6 +8,8 @@ Baymesh is a Meshtastic firmware fork for the Bay Area mesh with custom control,
 - Replay protection using sequence numbers and minimum interval enforcement
 - Position broadcast disabled by default
 - Custom protobuf additions for Baymesh control features
+- Extended hop limit: `HOP_MAX` raised to 64 (upstream caps at 7), allowing relay nodes to propagate packets further across the Bay Area mesh
+- Separate broadcast hop limit: `lora.broadcast_hop_limit` controls broadcast flooding depth independently of the unicast hop limit, defaulting to 3 to contain flood traffic while keeping DM routing range high
 
 ## Compatibility
 
