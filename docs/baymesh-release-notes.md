@@ -8,7 +8,6 @@ Baymesh is a Meshtastic firmware fork for the Bay Area mesh with custom control,
 - Replay protection using sequence numbers and minimum interval enforcement
 - Position broadcast disabled by default
 - Custom protobuf additions for Baymesh control features
-- Hop-limit behavior adjusted for Baymesh relay use cases
 
 ## Compatibility
 
