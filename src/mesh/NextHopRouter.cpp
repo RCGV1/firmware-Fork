@@ -23,12 +23,21 @@ PendingPacket::PendingPacket(meshtastic_MeshPacket *p, uint8_t numRetransmission
  */
 ErrorCode NextHopRouter::send(meshtastic_MeshPacket *p)
 {
-    // Add any messages _we_ send to the seen message list (so we will ignore all retransmissions we see)
-    p->relay_node = getNodeNum(); // First set the relayer to us (full node ID)
-    wasSeenRecently(p);           // FIXME, move this to a sniffSent method
+    // Save any relay designation the caller set (e.g. dm_relay_node or broadcast preferred relay)
+    NodeNum userRelayNode = p->relay_node;
+
+    // Record ourselves as the relayer in packet history
+    p->relay_node = getNodeNum();
+    wasSeenRecently(p); // FIXME, move this to a sniffSent method
 
     p->next_hop = getNextHop(p->to, p->relay_node).value_or(NO_NEXT_HOP_PREFERENCE); // set the next hop
     LOG_DEBUG("Setting next hop for packet with dest %x to %x", p->to, p->next_hop);
+
+    // For packets we originate, restore the relay designation the caller set (dm_relay_node or
+    // broadcast preferred-relay). Relayed packets keep relay_node = getNodeNum() (who just relayed).
+    if (isFromUs(p) && userRelayNode != NO_RELAY_NODE) {
+        p->relay_node = userRelayNode;
+    }
 
     // If it's from us, ReliableRouter already handles retransmissions if want_ack is set. If a next hop is set and hop limit is
     // not 0 or want_ack is set, start retransmissions
@@ -140,10 +149,12 @@ bool NextHopRouter::perhapsRebroadcast(const meshtastic_MeshPacket *p)
     // Allow rebroadcast if hop_limit > 0 OR if we're exhausting hops (which sets hop_limit = 0 but still needs one relay)
     // Also check relay_node: if set, only the designated node should rebroadcast
     if (!isToUs(p) && !isFromUs(p) && (p->hop_limit > 0 || exhaustHops)) {
-        // Check if this packet has a designated relay_node
-        if (p->relay_node != 0 && p->relay_node != getNodeNum()) {
-            // Packet has a relay_node but it's not us - don't rebroadcast
-            LOG_DEBUG("Not rebroadcasting: relay_node=0x%x is not us (0x%x)", p->relay_node, getNodeNum());
+        // Check if this packet has a designated relay_node or next_hop
+        // We should NOT rebroadcast only if a relay_node is designated that isn't us
+        // AND we're also not the designated next_hop. If we're the next_hop, we must relay.
+        if (p->relay_node != 0 && p->relay_node != getNodeNum() && p->next_hop != getNodeNum()) {
+            LOG_DEBUG("Not rebroadcasting: relay_node=0x%x is not us (0x%x) and next_hop=0x%x is not us", p->relay_node,
+                      getNodeNum(), p->next_hop);
             return false;
         }
         if (p->id != 0) {
@@ -212,7 +223,7 @@ bool NextHopRouter::perhapsRebroadcast(const meshtastic_MeshPacket *p)
  * Get the next hop for a destination, given the relay node
  * @return the node number of the next hop, 0 if no preference (fallback to FloodingRouter)
  */
-std::optional<uint8_t> NextHopRouter::getNextHop(NodeNum to, uint8_t relay_node)
+std::optional<NodeNum> NextHopRouter::getNextHop(NodeNum to, NodeNum relay_node)
 {
     if (isBroadcast(to))
         return std::nullopt;

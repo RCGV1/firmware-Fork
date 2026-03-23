@@ -967,12 +967,12 @@ typedef struct _meshtastic_MeshPacket {
     meshtastic_MeshPacket_public_key_t public_key;
     /* Indicates whether the packet was en/decrypted using PKI */
     bool pki_encrypted;
-    /* Last byte of the node number of the node that should be used as the next hop in routing.
+    /* Node number of the node that should be used as the next hop in routing.
  Set by the firmware internally, clients are not supposed to set this. */
-    uint8_t next_hop;
-    /* Last byte of the node number of the node that will relay/relayed this packet.
- Set by the firmware internally, clients are not supposed to set this. */
-    uint8_t relay_node;
+    uint32_t next_hop;
+    /* Node number of the node that will relay/relayed this packet.
+ For DM packets: The firmware sets this to the configured dm_relay_node preference. */
+    uint32_t relay_node;
     /* *Never* sent over the radio links.
  Timestamp after which this packet may be sent.
  Set by the firmware internally, clients are not supposed to set this. */

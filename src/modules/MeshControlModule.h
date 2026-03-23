@@ -41,9 +41,6 @@ class MeshControlModule : public ProtobufModule<meshtastic_MeshControlPacket>, p
     uint32_t activateAtMs = 0;
     meshtastic_MeshControlSettings pendingSettings = meshtastic_MeshControlSettings_init_zero;
 
-    // Last accepted seq_num – used for replay protection
-    uint32_t lastAcceptedSeqNum = 0;
-
     /** Compute HMAC-SHA256(key, msg, msgLen) → out[32].
      *  Implemented using two calls to CryptoEngine::hash(). */
     static void hmacSha256(const uint8_t key[32], const uint8_t *msg, size_t msgLen, uint8_t out[32]);

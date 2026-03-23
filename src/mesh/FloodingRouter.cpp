@@ -18,9 +18,16 @@ FloodingRouter::FloodingRouter() {}
  */
 ErrorCode FloodingRouter::send(meshtastic_MeshPacket *p)
 {
-    // Add any messages _we_ send to the seen message list (so we will ignore all retransmissions we see)
-    p->relay_node = getNodeNum(); // First set the relayer to us (full node ID)
-    wasSeenRecently(p);           // FIXME, move this to a sniffSent method
+    // Record ourselves as the relayer in packet history
+    p->relay_node = getNodeNum();
+    wasSeenRecently(p); // FIXME, move this to a sniffSent method
+
+    // For broadcast relays (not originating from us), clear relay_node so downstream nodes
+    // can continue flooding. The designation is consumed after the first relay.
+    // The packet history has already recorded us as a relayer above.
+    if (!isFromUs(p) && isBroadcast(p->to)) {
+        p->relay_node = NO_RELAY_NODE;
+    }
 
     return Router::send(p);
 }

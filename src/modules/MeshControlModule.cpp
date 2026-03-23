@@ -124,9 +124,10 @@ bool MeshControlModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, 
         return false;
     }
 
-    // 5. Replay protection: seq_num must be greater than the last accepted
-    if (p->seq_num != 0 && p->seq_num <= lastAcceptedSeqNum) {
-        LOG_WARN("MeshControl: stale seq_num %u (last accepted %u) – dropping", p->seq_num, lastAcceptedSeqNum);
+    // 5. Replay protection: seq_num must be greater than the last accepted (persisted across reboots)
+    if (p->seq_num != 0 && p->seq_num <= devicestate.last_accepted_mesh_control_seq_num) {
+        LOG_WARN("MeshControl: stale seq_num %u (last accepted %u) – dropping", p->seq_num,
+                 devicestate.last_accepted_mesh_control_seq_num);
         return false;
     }
 
@@ -140,7 +141,8 @@ bool MeshControlModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, 
 
     LOG_INFO("MeshControl: authenticated packet from 0x%08x (seq=%u, mesh='%s')", mp.from, p->seq_num, p->mesh_name);
 
-    lastAcceptedSeqNum = p->seq_num;
+    devicestate.last_accepted_mesh_control_seq_num = p->seq_num;
+    nodeDB->saveToDisk(SEGMENT_DEVICESTATE);
     lastAcceptedMs = millis();
 
     if (!p->has_settings) {
