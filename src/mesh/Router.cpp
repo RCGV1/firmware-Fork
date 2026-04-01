@@ -357,13 +357,16 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
     // assert(!nakId); // I don't think we ever send 0hop naks over the wire (other than to the phone), test that assumption with
     // assert
 
-    // Never set want_ack or want_response on broadcast packets — broadcast ACK/response is deprecated.
-    if (isBroadcast(p->to)) {
-        p->want_ack = false;
-        if (p->which_payload_variant == meshtastic_MeshPacket_decoded_tag) {
-            p->decoded.want_response = false;
-            p->decoded.bitfield &= ~BITFIELD_WANT_RESPONSE_MASK;
-        }
+    // For periodic system broadcasts (position, telemetry) that are NOT requests,
+    // clamp hop_limit to the broadcast hop limit so they don't flood the full mesh.
+    // Text messages, admin packets, nodeinfo, and solicitations (want_response=true)
+    // keep the full unicast hop_limit so they reach across the whole mesh.
+    if (isBroadcast(p->to) && isFromUs(p) && p->which_payload_variant == meshtastic_MeshPacket_decoded_tag &&
+        !p->decoded.want_response &&
+        (p->decoded.portnum == meshtastic_PortNum_POSITION_APP || p->decoded.portnum == meshtastic_PortNum_TELEMETRY_APP)) {
+        uint8_t bcastLimit = Default::getConfiguredOrDefaultBroadcastHopLimit(config.lora.broadcast_hop_limit);
+        if (p->hop_limit > bcastLimit)
+            p->hop_limit = bcastLimit;
     }
 
     // Up until this point we might have been using 0 for the from address (if it started with the phone), but when we send over
