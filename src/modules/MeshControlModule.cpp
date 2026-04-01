@@ -28,8 +28,11 @@ void MeshControlModule::hmacSha256(const uint8_t key[32], const uint8_t *msg, si
 {
     // HMAC-SHA256 block size for SHA-256 is 64 bytes
     constexpr size_t BLOCK = 64;
+    constexpr size_t MAX_MSG = 256;
 
-    uint8_t ipad[BLOCK], opad[BLOCK];
+    // Use static buffers to avoid ~400 bytes of stack pressure on constrained nRF52 threads.
+    // Meshtastic packet processing is single-threaded so this is safe.
+    static uint8_t ipad[BLOCK], opad[BLOCK];
     memset(ipad, 0x36, BLOCK);
     memset(opad, 0x5C, BLOCK);
     // XOR the key into the pads
@@ -39,17 +42,15 @@ void MeshControlModule::hmacSha256(const uint8_t key[32], const uint8_t *msg, si
     }
 
     // inner = SHA256(ipad || msg)
-    // Limit to 320 bytes total inner buffer (ipad 64 + up to 256 bytes payload)
-    constexpr size_t MAX_MSG = 256;
     if (msgLen > MAX_MSG)
         msgLen = MAX_MSG;
-    uint8_t inner_buf[BLOCK + MAX_MSG];
+    static uint8_t inner_buf[BLOCK + MAX_MSG];
     memcpy(inner_buf, ipad, BLOCK);
     memcpy(inner_buf + BLOCK, msg, msgLen);
     crypto->hash(inner_buf, BLOCK + msgLen); // first 32 bytes of inner_buf become the hash
 
     // outer = SHA256(opad || inner_hash[0:32])
-    uint8_t outer_buf[BLOCK + 32];
+    static uint8_t outer_buf[BLOCK + 32];
     memcpy(outer_buf, opad, BLOCK);
     memcpy(outer_buf + BLOCK, inner_buf, 32); // inner hash
     crypto->hash(outer_buf, BLOCK + 32);
@@ -81,12 +82,13 @@ bool MeshControlModule::verifyHmac(const meshtastic_MeshControlPacket &pkt) cons
     if (mc.control_key.size != 32)
         return false;
 
-    uint8_t canonical[280];
+    // Static buffer avoids ~280 bytes of stack pressure. Safe because packet processing is single-threaded.
+    static uint8_t canonical[280];
     size_t canonLen = serializeForHmac(pkt, canonical, sizeof(canonical));
     if (canonLen == 0)
         return false;
 
-    uint8_t computed[32];
+    static uint8_t computed[32];
     hmacSha256(mc.control_key.bytes, canonical, canonLen, computed);
 
     // Compare first 16 bytes of HMAC with the packet's hmac field
@@ -187,8 +189,10 @@ bool MeshControlModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, 
         devicestate.last_accepted_mesh_control_seq_num = p->seq_num;
         nodeDB->saveToDisk(SEGMENT_DEVICESTATE);
         lastAcceptedMs = millis();
-        activateAtMs = millis() + p->activation_delay_secs * 1000UL;
-        setIntervalFromNow(p->activation_delay_secs * 1000UL);
+        // Cap delay to avoid uint32_t overflow: activation_delay_secs * 1000 wraps above ~49.7 days.
+        uint32_t delayMs = (uint32_t)min((uint64_t)p->activation_delay_secs * 1000ULL, (uint64_t)UINT32_MAX);
+        activateAtMs = millis() + delayMs;
+        setIntervalFromNow(delayMs);
         enabled = true;
     } else {
         devicestate.last_accepted_mesh_control_seq_num = p->seq_num;

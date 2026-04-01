@@ -4,6 +4,7 @@
 #include "graphics/Screen.h"
 #include "graphics/ScreenFonts.h"
 #include "graphics/SharedUIDisplay.h"
+#include "mesh/Default.h"
 #include "mesh/Router.h"
 #include "meshUtils.h"
 #include <vector>
@@ -590,6 +591,9 @@ bool TraceRouteModule::startTraceRoute(NodeNum node)
     if (p) {
         // Set destination and port
         p->to = node;
+        // Override the default broadcast hop limit — traceroutes are directed messages that need
+        // the full unicast hop limit to reach nodes beyond the broadcast radius.
+        p->hop_limit = Default::getConfiguredOrDefaultHopLimit(config.lora.hop_limit);
         p->decoded.portnum = meshtastic_PortNum_TRACEROUTE_APP;
         p->decoded.want_response = true;
 
@@ -710,6 +714,9 @@ void TraceRouteModule::launch(NodeNum node)
     meshtastic_MeshPacket *p = router->allocForSending();
     if (p) {
         p->to = node;
+        // Override the default broadcast hop limit — traceroutes are directed messages that need
+        // the full unicast hop limit to reach nodes beyond the broadcast radius.
+        p->hop_limit = Default::getConfiguredOrDefaultHopLimit(config.lora.hop_limit);
         p->decoded.portnum = meshtastic_PortNum_TRACEROUTE_APP;
         p->decoded.want_response = true;
 

@@ -353,20 +353,27 @@ int32_t NextHopRouter::doRetransmissions()
                 // Escalate coding rate on each retransmit: initial send uses configured CR (e.g. 4/5),
                 // retransmit 1 -> 4/6, retransmit 2 -> 4/7, retransmit 3+ -> 4/8.
                 // LoRa explicit-header mode embeds the CR in every packet, so receivers auto-detect it.
+                // Store the desired CR per-packet and apply it immediately before sending so that
+                // multiple concurrent retransmissions in the same doRetransmissions() pass don't
+                // overwrite each other's setNextTxCodingRate() state.
                 ++p.retransmitAttempt;
                 if (iface) {
                     uint8_t baseCr = iface->getBaseCr();
                     uint8_t escalatedCr = baseCr + p.retransmitAttempt;
                     if (escalatedCr > 8)
                         escalatedCr = 8;
+                    p.desiredCr = escalatedCr;
                     if (escalatedCr != baseCr) {
                         LOG_DEBUG("CR escalation: attempt %u, CR 4/%u -> 4/%u", p.retransmitAttempt, baseCr, escalatedCr);
-                        iface->setNextTxCodingRate(escalatedCr);
                     }
                 }
 
                 LOG_DEBUG("Sending retransmission fr=0x%x,to=0x%x,id=0x%x, tries left=%d", p.packet->from, p.packet->to,
                           p.packet->id, p.numRetransmissions);
+
+                // Apply this packet's desired coding rate immediately before queuing the send.
+                if (iface && p.desiredCr != 0 && p.desiredCr != iface->getBaseCr())
+                    iface->setNextTxCodingRate(p.desiredCr);
 
                 if (!isBroadcast(p.packet->to)) {
                     if (p.numRetransmissions == 1) {

@@ -46,6 +46,11 @@ struct PendingPacket {
     /** Incremented on each retransmission; used to escalate the LoRa coding rate per attempt */
     uint8_t retransmitAttempt = 0;
 
+    /** Desired coding rate for this retransmission (0 = use default/base rate).
+     *  Stored per-packet so that concurrent retransmissions in the same doRetransmissions()
+     *  pass don't overwrite each other's setNextTxCodingRate() state. */
+    uint8_t desiredCr = 0;
+
     PendingPacket() {}
     explicit PendingPacket(meshtastic_MeshPacket *p, uint8_t numRetransmissions);
 };

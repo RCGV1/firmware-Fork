@@ -20,7 +20,7 @@ class PacketHistory
         PacketId id;
         uint32_t rxTimeMsec;              // Unix time in msecs - the time we received it, 0 means empty
         NodeNum next_hop;                 // The next hop asked for this packet (full node ID)
-        uint16_t hop_limit;               // bits 0-5: Highest hop limit observed, bits 6-11: our hop limit when transmitted
+        uint16_t hop_limit;               // bits 0-6: Highest hop limit observed, bits 7-13: our hop limit when transmitted
         uint16_t _pad;                    // padding for alignment
         NodeNum relayed_by[NUM_RELAYERS]; // Array of full node IDs that relayed this packet
     };                                    // 4B + 4B + 4B + 4B + 2B + 2B + (4B*6) = 40B
