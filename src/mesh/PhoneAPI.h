@@ -105,6 +105,10 @@ class PhoneAPI
     /// Destructor - calls close()
     virtual ~PhoneAPI();
 
+    /// Policy helper so we can regression-test which phone-originated packets
+    /// should automatically request reliable delivery.
+    static bool shouldUseReliableDeliveryForPhonePacket(const meshtastic_MeshPacket &p);
+
     // Call this when the client drops the connection, resets the state to STATE_SEND_NOTHING
     // Unregisters our observer.  A closed connection **can** be reopened by calling init again.
     virtual void close();

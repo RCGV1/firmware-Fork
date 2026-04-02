@@ -18,18 +18,24 @@ FloodingRouter::FloodingRouter() {}
  */
 ErrorCode FloodingRouter::send(meshtastic_MeshPacket *p)
 {
+    // Save any explicit relay designation the caller set for a preferred first relay.
+    NodeNum userRelayNode = p->relay_node;
+
     // Record ourselves as the relayer in packet history
     p->relay_node = getNodeNum();
     wasSeenRecently(p); // FIXME, move this to a sniffSent method
 
-    // Clear relay_node in two cases so the relay_node gate in perhapsRebroadcast doesn't
-    // block forwarding:
-    //   1. Broadcast relays (not from us): any downstream node should continue flooding.
-    //   2. DMs with no explicit next-hop (flood-fallback last retransmit from doRetransmissions):
-    //      relay_node=originator with next_hop=0 would cause every intermediate to refuse relay.
-    if (!isFromUs(p) && isBroadcast(p->to)) {
-        p->relay_node = NO_RELAY_NODE;
-    } else if (!isBroadcast(p->to) && p->next_hop == NO_NEXT_HOP_PREFERENCE) {
+    // Clear relay_node unless the caller explicitly selected a preferred relay. Otherwise the
+    // designated-relay gate in perhapsRebroadcast() will stop normal flooding and implicit ACKs.
+    if (isBroadcast(p->to)) {
+        if (isFromUs(p) && userRelayNode != NO_RELAY_NODE) {
+            p->relay_node = userRelayNode;
+        } else {
+            p->relay_node = NO_RELAY_NODE;
+        }
+    } else if (p->next_hop == NO_NEXT_HOP_PREFERENCE) {
+        // DMs with no explicit next-hop (flood-fallback last retransmit from doRetransmissions)
+        // must also clear relay_node so intermediate relays are not blocked.
         p->relay_node = NO_RELAY_NODE;
     }
 

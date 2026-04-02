@@ -46,6 +46,22 @@ PhoneAPI::~PhoneAPI()
     close();
 }
 
+bool PhoneAPI::shouldUseReliableDeliveryForPhonePacket(const meshtastic_MeshPacket &p)
+{
+    // Text messages should use the same reliable-delivery path as on-device sends so
+    // broadcasts can generate implicit ACKs and DMs get explicit delivery confirmation.
+    if (IS_ONE_OF(p.decoded.portnum, meshtastic_PortNum_TEXT_MESSAGE_APP, meshtastic_PortNum_TEXT_MESSAGE_COMPRESSED_APP)) {
+        return true;
+    }
+
+    // Upstream already forces reliable delivery for directed traceroute requests.
+    if (p.decoded.portnum == meshtastic_PortNum_TRACEROUTE_APP && !isBroadcast(p.to)) {
+        return true;
+    }
+
+    return false;
+}
+
 void PhoneAPI::handleStartConfig()
 {
     // Must be before setting state (because state is how we know !connected)
@@ -825,9 +841,9 @@ bool PhoneAPI::handleToRadioPacket(meshtastic_MeshPacket &p)
         return false;
     }
 
-    // Upgrade traceroute requests from phone to use reliable delivery, matching TraceRouteModule
-    if (p.decoded.portnum == meshtastic_PortNum_TRACEROUTE_APP && !isBroadcast(p.to)) {
-        // Use reliable delivery for traceroute requests (which will be copied to traceroute responses by setReplyTo)
+    if (shouldUseReliableDeliveryForPhonePacket(p)) {
+        // Keep phone-originated text/traceroute aligned with the reliable delivery policy
+        // used by on-device send paths.
         p.want_ack = true;
     }
 
