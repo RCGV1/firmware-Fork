@@ -3,6 +3,7 @@
 #include "MeshService.h"
 #include "NodeDB.h"
 #include "RTC.h"
+#include "TransmitHistory.h"
 #include <Throttle.h>
 
 NeighborInfoModule *neighborInfoModule;
@@ -105,6 +106,16 @@ void NeighborInfoModule::cleanUpNeighbors()
 /* Send neighbor info to the mesh */
 void NeighborInfoModule::sendNeighborInfo(NodeNum dest, bool wantReplies)
 {
+    const uint32_t minIntervalMs =
+        Default::getConfiguredOrDefaultMs(moduleConfig.neighbor_info.update_interval, default_neighbor_info_broadcast_secs);
+    const uint32_t lastNeighborInfo =
+        transmitHistory ? transmitHistory->getLastSentToMeshMillis(meshtastic_PortNum_NEIGHBORINFO_APP) : 0;
+
+    if (lastNeighborInfo && Throttle::isWithinTimespanMs(lastNeighborInfo, minIntervalMs)) {
+        LOG_DEBUG("Skip send NeighborInfo since we sent it <%us ago", minIntervalMs / 1000);
+        return;
+    }
+
     meshtastic_NeighborInfo neighborInfo = meshtastic_NeighborInfo_init_zero;
     collectNeighborInfo(&neighborInfo);
     // only send neighbours if we have some to send
@@ -114,6 +125,8 @@ void NeighborInfoModule::sendNeighborInfo(NodeNum dest, bool wantReplies)
         p->decoded.want_response = wantReplies;
         p->priority = meshtastic_MeshPacket_Priority_BACKGROUND;
         printNeighborInfo("SENDING", &neighborInfo);
+        if (transmitHistory)
+            transmitHistory->setLastSentToMesh(meshtastic_PortNum_NEIGHBORINFO_APP);
         service->sendToMesh(p, RX_SRC_LOCAL, true);
     }
 }

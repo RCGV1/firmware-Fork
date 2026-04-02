@@ -1,4 +1,6 @@
 #include "MeshControlModule.h"
+#include "Channels.h"
+#include "Default.h"
 #include "MeshService.h"
 #include "NodeDB.h"
 #include "RTC.h"
@@ -12,6 +14,34 @@
 #include <string.h>
 
 MeshControlModule *meshControlModule;
+
+static bool meshControlPositionBroadcastUsesDefaultChannel()
+{
+    for (uint8_t i = 0; i < channels.getNumChannels(); i++) {
+        const auto &channel = channels.getByIndex(i);
+        if (channel.settings.has_module_settings && channel.settings.module_settings.position_precision != 0) {
+            return channels.isDefaultChannel(i);
+        }
+    }
+
+    return false;
+}
+
+static void clampMeshControlBeaconIntervals()
+{
+    if (channels.hasDefaultChannel()) {
+        moduleConfig.telemetry.device_update_interval = Default::getConfiguredOrMinimumValue(
+            moduleConfig.telemetry.device_update_interval, min_default_telemetry_interval_secs);
+    }
+
+    if (meshControlPositionBroadcastUsesDefaultChannel()) {
+        config.position.position_broadcast_secs =
+            Default::getConfiguredOrMinimumValue(config.position.position_broadcast_secs, min_default_broadcast_interval_secs);
+    }
+
+    config.device.node_info_broadcast_secs =
+        Default::getConfiguredOrMinimumValue(config.device.node_info_broadcast_secs, min_node_info_broadcast_secs);
+}
 
 MeshControlModule::MeshControlModule()
     : ProtobufModule("mesh_control", meshtastic_PortNum_MESH_CONTROL_APP, &meshtastic_MeshControlPacket_msg),
@@ -284,6 +314,10 @@ void MeshControlModule::applySettings(const meshtastic_MeshControlSettings &s)
         config.device.node_info_broadcast_secs = s.node_info_broadcast_secs;
         intervalChanged = true;
         LOG_INFO("MeshControl: set node_info_broadcast_secs=%u", s.node_info_broadcast_secs);
+    }
+
+    if (intervalChanged) {
+        clampMeshControlBeaconIntervals();
     }
 
     // Persist and (if LoRa changed) trigger a radio reconfiguration

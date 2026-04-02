@@ -102,6 +102,13 @@ class Router : protected concurrency::OSThread, protected PacketHistory
     friend class RoutingModule;
 
     /**
+     * Routine flood-style broadcasts should honor broadcast_hop_limit to contain airtime.
+     * Interactive/user-facing and administrative traffic should stay on the regular hop limit
+     * even when sent to NODENUM_BROADCAST.
+     */
+    static bool usesBroadcastHopLimit(const meshtastic_MeshPacket *p);
+
+    /**
      * Should this incoming filter be dropped?
      *
      * FIXME, move this into the new RoutingModule and do the filtering there using the regular module logic

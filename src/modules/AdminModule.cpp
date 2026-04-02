@@ -65,6 +65,46 @@ static void writeSecret(char *buf, size_t bufsz, const char *currentVal)
     }
 }
 
+static bool positionBroadcastUsesDefaultChannel()
+{
+    for (uint8_t i = 0; i < channels.getNumChannels(); i++) {
+        const auto &channel = channels.getByIndex(i);
+        if (channel.settings.has_module_settings && channel.settings.module_settings.position_precision != 0) {
+            return channels.isDefaultChannel(i);
+        }
+    }
+
+    return false;
+}
+
+static void clampBeaconIntervalsForConfig()
+{
+    if (channels.hasDefaultChannel()) {
+        moduleConfig.telemetry.device_update_interval = Default::getConfiguredOrMinimumValue(
+            moduleConfig.telemetry.device_update_interval, min_default_telemetry_interval_secs);
+        moduleConfig.telemetry.environment_update_interval = Default::getConfiguredOrMinimumValue(
+            moduleConfig.telemetry.environment_update_interval, min_default_telemetry_interval_secs);
+        moduleConfig.telemetry.air_quality_interval = Default::getConfiguredOrMinimumValue(
+            moduleConfig.telemetry.air_quality_interval, min_default_telemetry_interval_secs);
+        moduleConfig.telemetry.power_update_interval = Default::getConfiguredOrMinimumValue(
+            moduleConfig.telemetry.power_update_interval, min_default_telemetry_interval_secs);
+        moduleConfig.telemetry.health_update_interval = Default::getConfiguredOrMinimumValue(
+            moduleConfig.telemetry.health_update_interval, min_default_telemetry_interval_secs);
+    }
+
+    if (positionBroadcastUsesDefaultChannel()) {
+        config.position.position_broadcast_secs =
+            Default::getConfiguredOrMinimumValue(config.position.position_broadcast_secs, min_default_broadcast_interval_secs);
+        config.position.broadcast_smart_minimum_interval_secs = Default::getConfiguredOrMinimumValue(
+            config.position.broadcast_smart_minimum_interval_secs, min_default_broadcast_smart_minimum_interval_secs);
+    }
+
+    config.device.node_info_broadcast_secs =
+        Default::getConfiguredOrMinimumValue(config.device.node_info_broadcast_secs, min_node_info_broadcast_secs);
+    moduleConfig.neighbor_info.update_interval =
+        Default::getConfiguredOrMinimumValue(moduleConfig.neighbor_info.update_interval, min_neighbor_info_broadcast_secs);
+}
+
 /**
  * @brief Handle received protobuf message
  *
@@ -718,6 +758,7 @@ void AdminModule::handleSetConfig(const meshtastic_Config &c, bool fromOthers)
             saveChanges(SEGMENT_NODEDATABASE | SEGMENT_CONFIG, false);
         }
         config.position = c.payload_variant.position;
+        clampBeaconIntervalsForConfig();
 
         // Save nodedb as well in case we got a fixed position packet
         break;
@@ -989,6 +1030,7 @@ bool AdminModule::handleSetModuleConfig(const meshtastic_ModuleConfig &c)
         LOG_INFO("Set module config: Telemetry");
         moduleConfig.has_telemetry = true;
         moduleConfig.telemetry = c.payload_variant.telemetry;
+        clampBeaconIntervalsForConfig();
         break;
     case meshtastic_ModuleConfig_canned_message_tag:
         LOG_INFO("Set module config: Canned Message");
@@ -1008,11 +1050,12 @@ bool AdminModule::handleSetModuleConfig(const meshtastic_ModuleConfig &c)
     case meshtastic_ModuleConfig_neighbor_info_tag:
         LOG_INFO("Set module config: Neighbor Info");
         moduleConfig.has_neighbor_info = true;
+        moduleConfig.neighbor_info = c.payload_variant.neighbor_info;
         if (moduleConfig.neighbor_info.update_interval < min_neighbor_info_broadcast_secs) {
             LOG_DEBUG("Tried to set update_interval too low, setting to %d", default_neighbor_info_broadcast_secs);
             moduleConfig.neighbor_info.update_interval = default_neighbor_info_broadcast_secs;
         }
-        moduleConfig.neighbor_info = c.payload_variant.neighbor_info;
+        clampBeaconIntervalsForConfig();
         break;
     case meshtastic_ModuleConfig_detection_sensor_tag:
         LOG_INFO("Set module config: Detection Sensor");

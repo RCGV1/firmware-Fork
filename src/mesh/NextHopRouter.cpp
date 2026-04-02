@@ -188,8 +188,9 @@ bool NextHopRouter::perhapsRebroadcast(const meshtastic_MeshPacket *p)
                         LOG_INFO("favorite-ROUTER rebroadcast: preserving hop_limit");
                     }
 
-                    // Scale down broadcast (non-directed) packet hop_limit to our configured broadcast hop limit
-                    if (isBroadcast(p->to)) {
+                    // Keep routine broadcasts on the broadcast hop limit, but leave interactive/admin
+                    // broadcasts on the regular hop limit across the mesh.
+                    if (usesBroadcastHopLimit(tosend)) {
                         uint8_t bcastLimit = Default::getConfiguredOrDefaultBroadcastHopLimit(config.lora.broadcast_hop_limit);
                         if (tosend->hop_limit > bcastLimit) {
                             // Adjust hop_start proportionally to preserve hops-away calculation

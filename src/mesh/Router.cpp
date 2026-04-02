@@ -82,6 +82,24 @@ Router::Router() : concurrency::OSThread("Router"), fromRadioQueue(MAX_RX_FROMRA
     cryptLock = new concurrency::Lock();
 }
 
+bool Router::usesBroadcastHopLimit(const meshtastic_MeshPacket *p)
+{
+    if (!p || !isBroadcast(p->to)) {
+        return false;
+    }
+
+    if (p->which_payload_variant != meshtastic_MeshPacket_decoded_tag) {
+        return false;
+    }
+
+    if (p->decoded.want_response) {
+        return false;
+    }
+
+    return IS_ONE_OF(p->decoded.portnum, meshtastic_PortNum_POSITION_APP, meshtastic_PortNum_TELEMETRY_APP,
+                     meshtastic_PortNum_NEIGHBORINFO_APP);
+}
+
 bool Router::shouldDecrementHopLimit(const meshtastic_MeshPacket *p)
 {
     // First hop MUST always decrement to prevent retry issues
@@ -223,8 +241,8 @@ meshtastic_MeshPacket *Router::allocForSending()
     p->which_payload_variant = meshtastic_MeshPacket_decoded_tag; // Assume payload is decoded at start.
     p->from = nodeDB->getNodeNum();
     p->to = NODENUM_BROADCAST;
-    // Broadcast packets use the broadcast hop limit; will be overridden by caller for directed messages
-    p->hop_limit = Default::getConfiguredOrDefaultBroadcastHopLimit(config.lora.broadcast_hop_limit);
+    // New packets default to the regular hop limit. Routine broadcasts are clamped later in send().
+    p->hop_limit = Default::getConfiguredOrDefaultHopLimit(config.lora.hop_limit);
     p->id = generatePacketId();
     p->rx_time =
         getValidTime(RTCQualityFromNet); // Just in case we process the packet locally - make sure it has a valid timestamp
@@ -357,13 +375,9 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
     // assert(!nakId); // I don't think we ever send 0hop naks over the wire (other than to the phone), test that assumption with
     // assert
 
-    // For periodic system broadcasts (position, telemetry) that are NOT requests,
-    // clamp hop_limit to the broadcast hop limit so they don't flood the full mesh.
-    // Text messages, admin packets, nodeinfo, and solicitations (want_response=true)
-    // keep the full unicast hop_limit so they reach across the whole mesh.
-    if (isBroadcast(p->to) && isFromUs(p) && p->which_payload_variant == meshtastic_MeshPacket_decoded_tag &&
-        !p->decoded.want_response &&
-        (p->decoded.portnum == meshtastic_PortNum_POSITION_APP || p->decoded.portnum == meshtastic_PortNum_TELEMETRY_APP)) {
+    // Only routine broadcast traffic should use the broadcast hop limit.
+    // Text, admin, node info, and other interactive traffic keep the regular hop limit even if broadcast.
+    if (isFromUs(p) && usesBroadcastHopLimit(p)) {
         uint8_t bcastLimit = Default::getConfiguredOrDefaultBroadcastHopLimit(config.lora.broadcast_hop_limit);
         if (p->hop_limit > bcastLimit)
             p->hop_limit = bcastLimit;
