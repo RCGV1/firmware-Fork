@@ -4,7 +4,7 @@
 
 // Created by https://oleddisplay.squix.ch/ Consider a donation
 // In case of problems make sure that you are using the font file with the correct version!
-const uint8_t Monospaced_plain_30[] PROGMEM = {
+extern const uint8_t Monospaced_plain_30[] PROGMEM = {
     0x12, // Width: 18
     0x24, // Height: 36
     0x20, // First Char: 32
