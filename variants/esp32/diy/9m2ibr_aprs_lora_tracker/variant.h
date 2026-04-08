@@ -23,6 +23,7 @@
 // LEDs
 #define LED_POWER 13 // Tx LED
 #define USER_LED 2   // Rx LED
+#define LED_STATE_ON 1
 
 // Buzzer
 #define PIN_BUZZER 33
