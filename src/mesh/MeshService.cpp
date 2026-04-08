@@ -100,9 +100,7 @@ int MeshService::handleFromRadio(const meshtastic_MeshPacket *mp)
                 LOG_DEBUG("Skip send NodeInfo: %d hops away is too far away", hopsUsed);
             } else {
                 LOG_INFO("Heard new node on ch. %d, send NodeInfo and ask for response", mp->channel);
-                // Discovery of an unknown peer is interactive traffic: bypass the routine NodeInfo
-                // throttle so fresh user info and PKI material can be exchanged immediately.
-                nodeInfoModule->sendOurNodeInfo(mp->from, true, mp->channel, true, true);
+                nodeInfoModule->sendOurNodeInfo(mp->from, true, mp->channel);
             }
         } else {
             LOG_DEBUG("Skip sending NodeInfo > 25%% ch. util");
