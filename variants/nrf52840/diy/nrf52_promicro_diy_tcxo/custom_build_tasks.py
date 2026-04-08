@@ -60,3 +60,10 @@ elif "build_weact_420" in COMMAND_LINE_TARGETS:
     print('Building for WeAct 4.2" Display')
     projenv["CPPDEFINES"].append(("INKHUD_BUILDCONF_DRIVER", "HINK_E042A87"))
     projenv["CPPDEFINES"].append(("INKHUD_BUILDCONF_DISPLAYRESILIENCE", "15"))
+
+else:
+    # CI and plain `pio run -e ...` builds do not invoke the custom preset targets above.
+    # Default to the most common WeAct 2.13" panel so the environment has a stable baseline.
+    print('Building for WeAct 2.13" Display (default)')
+    projenv["CPPDEFINES"].append(("INKHUD_BUILDCONF_DRIVER", "HINK_E0213A289"))
+    projenv["CPPDEFINES"].append(("INKHUD_BUILDCONF_DISPLAYRESILIENCE", "10"))

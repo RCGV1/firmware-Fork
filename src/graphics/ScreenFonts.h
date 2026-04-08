@@ -110,9 +110,9 @@
 #undef FONT_SMALL
 #undef FONT_MEDIUM
 #undef FONT_LARGE
-#define FONT_SMALL Monospaced_plain_30
-#define FONT_MEDIUM Monospaced_plain_30
-#define FONT_LARGE Monospaced_plain_30
+#define FONT_SMALL FONT_SMALL_LOCAL
+#define FONT_MEDIUM FONT_MEDIUM_LOCAL
+#define FONT_LARGE FONT_LARGE_LOCAL
 #endif
 
 #define _fontHeight(font) ((font)[1] + 1) // height is position 1
