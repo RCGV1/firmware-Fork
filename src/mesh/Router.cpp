@@ -422,7 +422,7 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
                 packetPool.release(p);
                 // Send our NodeInfo to the destination with want_response so they reply
                 // with their NodeInfo (and public key).
-                nodeInfoModule->sendOurNodeInfo(pkiRetryDest, true, chIndex, false, true);
+                nodeInfoModule->sendOurNodeInfo(pkiRetryDest, true, chIndex, false);
                 LOG_INFO("PKI key unknown for 0x%08x — queued DM, requested NodeInfo exchange", pkiRetryDest);
                 setReceivedMessage(); // ensure runOnce wakes for timeout tracking
                 return meshtastic_Routing_Error_NONE;

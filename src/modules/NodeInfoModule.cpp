@@ -37,16 +37,9 @@ bool NodeInfoModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, mes
         auto it = lastNodeInfoSeen.find(sender);
         if (it != lastNodeInfoSeen.end()) {
             uint32_t sinceLast = now >= it->second ? now - it->second : 0;
-            // Only suppress replies to broadcast requests (flood prevention).
-            // Always reply to unicast requests so PKI key exchange can succeed.
-            if (isBroadcast(mp.to) && sinceLast < NodeInfoReplySuppressSeconds) {
+            if (sinceLast < NodeInfoReplySuppressSeconds) {
                 suppressReplyForCurrentRequest = true;
             }
-        }
-        // For unicast NodeInfo requests (e.g., PKI key exchange), bypass the
-        // transmit throttle so the reply is never silently dropped.
-        if (!isBroadcast(mp.to)) {
-            bypassThrottle = true;
         }
         lastNodeInfoSeen[sender] = now;
         pruneLastNodeInfoCache();
@@ -92,13 +85,12 @@ void NodeInfoModule::alterReceivedProtobuf(meshtastic_MeshPacket &mp, meshtastic
         pb_encode_to_bytes(mp.decoded.payload.bytes, sizeof(mp.decoded.payload.bytes), &meshtastic_User_msg, p);
 }
 
-void NodeInfoModule::sendOurNodeInfo(NodeNum dest, bool wantReplies, uint8_t channel, bool _shorterTimeout, bool _bypassThrottle)
+void NodeInfoModule::sendOurNodeInfo(NodeNum dest, bool wantReplies, uint8_t channel, bool _shorterTimeout)
 {
     // cancel any not yet sent (now stale) position packets
     if (prevPacketId) // if we wrap around to zero, we'll simply fail to cancel in that rare case (no big deal)
         service->cancelSending(prevPacketId);
     shorterTimeout = _shorterTimeout;
-    bypassThrottle = _bypassThrottle;
     DEBUG_HEAP_BEFORE;
     meshtastic_MeshPacket *p = allocReply();
     DEBUG_HEAP_AFTER("NodeInfoModule::sendOurNodeInfo", p);
@@ -123,7 +115,6 @@ void NodeInfoModule::sendOurNodeInfo(NodeNum dest, bool wantReplies, uint8_t cha
 
         service->sendToMesh(p);
         shorterTimeout = false;
-        bypassThrottle = false;
     }
 }
 
@@ -151,20 +142,17 @@ meshtastic_MeshPacket *NodeInfoModule::allocReply()
     // Use graduated scaling based on active mesh size (10 minute base, scales with congestion coefficient)
     uint32_t timeoutMs = Default::getConfiguredOrDefaultMsScaled(0, 10 * 60, nodeStatus->getNumOnline());
     uint32_t lastNodeInfo = transmitHistory ? transmitHistory->getLastSentToMeshMillis(meshtastic_PortNum_NODEINFO_APP) : 0;
-    if (!bypassThrottle && !shorterTimeout && lastNodeInfo && Throttle::isWithinTimespanMs(lastNodeInfo, timeoutMs)) {
+    if (!shorterTimeout && lastNodeInfo && Throttle::isWithinTimespanMs(lastNodeInfo, timeoutMs)) {
         LOG_DEBUG("Skip send NodeInfo since we sent it <%us ago", timeoutMs / 1000);
         ignoreRequest = true; // Mark it as ignored for MeshModule
-        bypassThrottle = false;
         return NULL;
-    } else if (!bypassThrottle && shorterTimeout && lastNodeInfo && Throttle::isWithinTimespanMs(lastNodeInfo, 60 * 1000)) {
+    } else if (shorterTimeout && lastNodeInfo && Throttle::isWithinTimespanMs(lastNodeInfo, 60 * 1000)) {
         // For interactive/urgent requests (e.g., user-triggered or implicit requests), use a shorter 60s timeout
         LOG_DEBUG("Skip send NodeInfo since we sent it <60s ago");
         ignoreRequest = true;
-        bypassThrottle = false;
         return NULL;
     } else {
-        ignoreRequest = false;  // Don't ignore requests anymore
-        bypassThrottle = false; // Consumed — reset for next call
+        ignoreRequest = false; // Don't ignore requests anymore
         meshtastic_User &u = owner;
 
         // Strip the public key if the user is licensed
