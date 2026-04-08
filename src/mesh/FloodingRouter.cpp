@@ -156,7 +156,8 @@ void FloodingRouter::perhapsCancelDupe(const meshtastic_MeshPacket *p)
 
 bool FloodingRouter::isRebroadcaster()
 {
-    return config.device.rebroadcast_mode != meshtastic_Config_DeviceConfig_RebroadcastMode_NONE;
+    return config.device.role != meshtastic_Config_DeviceConfig_Role_CLIENT_MUTE &&
+           config.device.rebroadcast_mode != meshtastic_Config_DeviceConfig_RebroadcastMode_NONE;
 }
 
 void FloodingRouter::sniffReceived(const meshtastic_MeshPacket *p, const meshtastic_Routing *c)
