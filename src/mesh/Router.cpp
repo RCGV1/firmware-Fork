@@ -375,6 +375,13 @@ ErrorCode Router::send(meshtastic_MeshPacket *p)
     // assert(!nakId); // I don't think we ever send 0hop naks over the wire (other than to the phone), test that assumption with
     // assert
 
+    // Align with upstream: never set want_ack on broadcast packets sent over the air.
+    // Keeping reliable ACK semantics for broadcasts causes locally synthesized implicit
+    // ACKs when we overhear a rebroadcast of our own packet, which then look like
+    // self-ACKs in client-visible routing events.
+    if (isBroadcast(p->to))
+        p->want_ack = false;
+
     // Only routine broadcast traffic should use the broadcast hop limit.
     // Text, admin, node info, and other interactive traffic keep the regular hop limit even if broadcast.
     if (isFromUs(p) && usesBroadcastHopLimit(p)) {
