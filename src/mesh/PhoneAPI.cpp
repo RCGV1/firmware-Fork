@@ -48,13 +48,9 @@ PhoneAPI::~PhoneAPI()
 
 bool PhoneAPI::shouldUseReliableDeliveryForPhonePacket(const meshtastic_MeshPacket &p)
 {
-    // Text messages should use the same reliable-delivery path as on-device sends so
-    // broadcasts can generate implicit ACKs and DMs get explicit delivery confirmation.
-    if (IS_ONE_OF(p.decoded.portnum, meshtastic_PortNum_TEXT_MESSAGE_APP, meshtastic_PortNum_TEXT_MESSAGE_COMPRESSED_APP)) {
-        return true;
-    }
-
-    // Upstream already forces reliable delivery for directed traceroute requests.
+    // Match upstream: only directed traceroute requests are upgraded to reliable delivery.
+    // Client-originated text messages must preserve their original ack semantics so broadcast
+    // channel traffic does not enter the implicit self-ACK path.
     if (p.decoded.portnum == meshtastic_PortNum_TRACEROUTE_APP && !isBroadcast(p.to)) {
         return true;
     }
