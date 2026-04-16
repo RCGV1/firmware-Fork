@@ -127,6 +127,19 @@ void test_client_uses_public_channel_minimums()
     TEST_ASSERT_EQUAL_UINT32(60 * 60, position);
 }
 
+void test_zero_intervals_remain_disabled()
+{
+    config.device.role = meshtastic_Config_DeviceConfig_Role_CLIENT;
+
+    uint32_t telemetry = Default::getConfiguredOrMinimumValue(0, min_default_telemetry_interval_secs);
+    uint32_t position = Default::getConfiguredOrMinimumValue(0, min_default_broadcast_interval_secs);
+    uint32_t nodeInfo = Default::getConfiguredOrMinimumValue(0, min_node_info_broadcast_secs);
+
+    TEST_ASSERT_EQUAL_UINT32(0, telemetry);
+    TEST_ASSERT_EQUAL_UINT32(0, position);
+    TEST_ASSERT_EQUAL_UINT32(0, nodeInfo);
+}
+
 void setup()
 {
     // Small delay to match other test mains
@@ -140,6 +153,7 @@ void setup()
     RUN_TEST(test_router_uses_router_minimums);
     RUN_TEST(test_router_late_uses_router_minimums);
     RUN_TEST(test_client_uses_public_channel_minimums);
+    RUN_TEST(test_zero_intervals_remain_disabled);
     exit(UNITY_END());
 }
 

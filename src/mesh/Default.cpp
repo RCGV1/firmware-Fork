@@ -21,15 +21,26 @@ uint32_t Default::getConfiguredOrDefault(uint32_t configured, uint32_t defaultVa
 
 uint32_t Default::getConfiguredOrDefaultMsScaled(uint32_t configured, uint32_t defaultValue, uint32_t numOnlineNodes)
 {
-    // Use the configured interval if provided; otherwise, use the default interval.
-    // No scaling based on the number of online nodes.
-    return (configured > 0 ? configured : defaultValue) * 1000;
+    // Routers already use much larger defaults, so keep their configured/default interval unchanged.
+    if (config.device.role == meshtastic_Config_DeviceConfig_Role_ROUTER ||
+        config.device.role == meshtastic_Config_DeviceConfig_Role_ROUTER_LATE)
+        return getConfiguredOrDefaultMs(configured, defaultValue);
+
+    // Sensors and trackers should retain their normal cadence even on larger meshes.
+    if (IS_ONE_OF(config.device.role, meshtastic_Config_DeviceConfig_Role_SENSOR, meshtastic_Config_DeviceConfig_Role_TRACKER,
+                  meshtastic_Config_DeviceConfig_Role_TAK_TRACKER))
+        return getConfiguredOrDefaultMs(configured, defaultValue);
+
+    return getConfiguredOrDefaultMs(configured, defaultValue) * congestionScalingCoefficient(numOnlineNodes);
 }
 
 uint32_t Default::getConfiguredOrMinimumValue(uint32_t configured, uint32_t minValue)
 {
-    // Use the configured value if provided; otherwise, use the minimum value.
-    return (configured > 0 ? configured : minValue);
+    // Preserve zero so downstream default-resolution can still treat the interval as disabled.
+    if (configured == 0)
+        return 0;
+
+    return (configured < minValue ? minValue : configured);
 }
 
 uint8_t Default::getConfiguredOrDefaultHopLimit(uint8_t configured)
