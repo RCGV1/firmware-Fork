@@ -591,9 +591,10 @@ void NodeDB::installDefaultConfig(bool preserveKey = false)
 #endif
 
 #ifdef USERPREFS_CONFIG_DEVICE_ROLE
-    // Restrict ROUTER role for security reasons
-    if (USERPREFS_CONFIG_DEVICE_ROLE == meshtastic_Config_DeviceConfig_Role_ROUTER) {
-        LOG_WARN("ROUTER role is restricted, falling back to CLIENT role");
+    // Restrict ROUTER*, LOST_AND_FOUND roles for security reasons
+    if (IS_ONE_OF(USERPREFS_CONFIG_DEVICE_ROLE, meshtastic_Config_DeviceConfig_Role_ROUTER,
+                  meshtastic_Config_DeviceConfig_Role_ROUTER_LATE, meshtastic_Config_DeviceConfig_Role_LOST_AND_FOUND)) {
+        LOG_WARN("ROUTER roles are restricted, falling back to CLIENT role");
         config.device.role = meshtastic_Config_DeviceConfig_Role_CLIENT;
     } else {
         config.device.role = USERPREFS_CONFIG_DEVICE_ROLE;
@@ -679,7 +680,8 @@ void NodeDB::installDefaultConfig(bool preserveKey = false)
 #endif
     config.position.broadcast_smart_minimum_distance = 100;
     config.position.broadcast_smart_minimum_interval_secs = default_broadcast_smart_minimum_interval_secs;
-    if (config.device.role != meshtastic_Config_DeviceConfig_Role_ROUTER)
+    if (config.device.role != meshtastic_Config_DeviceConfig_Role_ROUTER &&
+        config.device.role != meshtastic_Config_DeviceConfig_Role_ROUTER_LATE)
         config.device.node_info_broadcast_secs = default_node_info_broadcast_secs;
     config.security.serial_enabled = true;
     config.security.admin_channel_enabled = false;
@@ -939,16 +941,55 @@ void NodeDB::installRoleDefaults(meshtastic_Config_DeviceConfig_Role role)
         config.device.rebroadcast_mode = meshtastic_Config_DeviceConfig_RebroadcastMode_CORE_PORTNUMS_ONLY;
         owner.has_is_unmessagable = true;
         owner.is_unmessagable = true;
+    } else if (role == meshtastic_Config_DeviceConfig_Role_ROUTER_LATE) {
+        moduleConfig.telemetry.device_update_interval = ONE_DAY;
+        owner.has_is_unmessagable = true;
+        owner.is_unmessagable = true;
     } else if (role == meshtastic_Config_DeviceConfig_Role_SENSOR) {
         owner.has_is_unmessagable = true;
         owner.is_unmessagable = true;
         moduleConfig.telemetry.device_update_interval = default_telemetry_broadcast_interval_secs;
         moduleConfig.telemetry.environment_measurement_enabled = true;
         moduleConfig.telemetry.environment_update_interval = 300;
+    } else if (role == meshtastic_Config_DeviceConfig_Role_LOST_AND_FOUND) {
+        config.position.position_broadcast_smart_enabled = false;
+        config.position.position_broadcast_secs = 300; // Every 5 minutes
+    } else if (role == meshtastic_Config_DeviceConfig_Role_TAK) {
+        config.device.node_info_broadcast_secs = ONE_DAY;
+        config.position.position_broadcast_smart_enabled = false;
+        config.position.position_broadcast_secs = ONE_DAY;
+        // Remove Altitude MSL from flags since CoTs use HAE (height above ellipsoid)
+        config.position.position_flags =
+            (meshtastic_Config_PositionConfig_PositionFlags_ALTITUDE | meshtastic_Config_PositionConfig_PositionFlags_SPEED |
+             meshtastic_Config_PositionConfig_PositionFlags_HEADING | meshtastic_Config_PositionConfig_PositionFlags_DOP);
+        moduleConfig.telemetry.device_update_interval = ONE_DAY;
     } else if (role == meshtastic_Config_DeviceConfig_Role_TRACKER) {
         owner.has_is_unmessagable = true;
         owner.is_unmessagable = true;
         moduleConfig.telemetry.device_update_interval = default_telemetry_broadcast_interval_secs;
+    } else if (role == meshtastic_Config_DeviceConfig_Role_TAK_TRACKER) {
+        owner.has_is_unmessagable = true;
+        owner.is_unmessagable = true;
+        config.device.node_info_broadcast_secs = ONE_DAY;
+        config.position.position_broadcast_smart_enabled = true;
+        config.position.position_broadcast_secs = 3 * 60; // Every 3 minutes
+        config.position.broadcast_smart_minimum_distance = 20;
+        config.position.broadcast_smart_minimum_interval_secs = 15;
+        // Remove Altitude MSL from flags since CoTs use HAE (height above ellipsoid)
+        config.position.position_flags =
+            (meshtastic_Config_PositionConfig_PositionFlags_ALTITUDE | meshtastic_Config_PositionConfig_PositionFlags_SPEED |
+             meshtastic_Config_PositionConfig_PositionFlags_HEADING | meshtastic_Config_PositionConfig_PositionFlags_DOP);
+        moduleConfig.telemetry.device_update_interval = ONE_DAY;
+    } else if (role == meshtastic_Config_DeviceConfig_Role_CLIENT_HIDDEN) {
+        config.device.rebroadcast_mode = meshtastic_Config_DeviceConfig_RebroadcastMode_LOCAL_ONLY;
+        config.device.node_info_broadcast_secs = MAX_INTERVAL;
+        config.position.position_broadcast_smart_enabled = false;
+        config.position.position_broadcast_secs = MAX_INTERVAL;
+        moduleConfig.neighbor_info.update_interval = MAX_INTERVAL;
+        moduleConfig.telemetry.device_update_interval = MAX_INTERVAL;
+        moduleConfig.telemetry.environment_update_interval = MAX_INTERVAL;
+        moduleConfig.telemetry.air_quality_interval = MAX_INTERVAL;
+        moduleConfig.telemetry.health_update_interval = MAX_INTERVAL;
     }
 }
 
