@@ -21,17 +21,9 @@ uint32_t Default::getConfiguredOrDefault(uint32_t configured, uint32_t defaultVa
 
 uint32_t Default::getConfiguredOrDefaultMsScaled(uint32_t configured, uint32_t defaultValue, uint32_t numOnlineNodes)
 {
-    // Routers already use much larger defaults, so keep their configured/default interval unchanged.
-    if (config.device.role == meshtastic_Config_DeviceConfig_Role_ROUTER ||
-        config.device.role == meshtastic_Config_DeviceConfig_Role_ROUTER_LATE)
-        return getConfiguredOrDefaultMs(configured, defaultValue);
-
-    // Sensors and trackers should retain their normal cadence even on larger meshes.
-    if (IS_ONE_OF(config.device.role, meshtastic_Config_DeviceConfig_Role_SENSOR, meshtastic_Config_DeviceConfig_Role_TRACKER,
-                  meshtastic_Config_DeviceConfig_Role_TAK_TRACKER))
-        return getConfiguredOrDefaultMs(configured, defaultValue);
-
-    return getConfiguredOrDefaultMs(configured, defaultValue) * congestionScalingCoefficient(numOnlineNodes);
+    // Baymesh intentionally omits congestion scaling: nodes have hops to spare and
+    // scaling creates unpredictable intervals that complicate network management.
+    return getConfiguredOrDefaultMs(configured, defaultValue);
 }
 
 uint32_t Default::getConfiguredOrMinimumValue(uint32_t configured, uint32_t minValue)
