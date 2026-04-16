@@ -149,8 +149,13 @@ bool AdminModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, meshta
             // Automatically favorite the node that is using the admin key
             auto remoteNode = nodeDB->getMeshNode(mp.from);
             if (remoteNode && !remoteNode->is_favorite) {
-                LOG_INFO("PKC admin valid. Auto-favoriting node %x", mp.from);
-                remoteNode->is_favorite = true;
+                if (config.device.role == meshtastic_Config_DeviceConfig_Role_CLIENT_BASE) {
+                    // CLIENT_BASE uses favorites for relay semantics, so don't auto-favorite admin contacts there.
+                    LOG_INFO("PKC admin valid, but not auto-favoriting node %x because role==CLIENT_BASE", mp.from);
+                } else {
+                    LOG_INFO("PKC admin valid. Auto-favoriting node %x", mp.from);
+                    remoteNode->is_favorite = true;
+                }
             }
         } else {
             myReply = allocErrorResponse(meshtastic_Routing_Error_ADMIN_PUBLIC_KEY_UNAUTHORIZED, &mp);

@@ -1831,8 +1831,13 @@ void NodeDB::addFromContact(meshtastic_SharedContact contact)
          * nodeinfo because it has: !is_favorite && last_heard==0. To keep this from happening when we addFromContact, we set the
          * new node as a favorite, and we leave last_heard alone (even if it's zero).
          */
-        // Set is_favorite to prevent expiration.
-        info->is_favorite = true;
+        if (config.device.role == meshtastic_Config_DeviceConfig_Role_CLIENT_BASE) {
+            // CLIENT_BASE uses favorites for relay semantics, so don't auto-favorite add_contact entries.
+            info->last_heard = getTime();
+        } else {
+            // Normal case: set is_favorite to prevent expiration.
+            info->is_favorite = true;
+        }
 
         // As the clients will begin sending the contact with DMs, we want to strictly check if the node is manually verified
         if (contact.manually_verified) {
