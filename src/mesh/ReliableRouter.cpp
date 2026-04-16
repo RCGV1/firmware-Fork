@@ -16,15 +16,16 @@
  */
 ErrorCode ReliableRouter::send(meshtastic_MeshPacket *p)
 {
-    if (p->want_ack) {
+    if (p->want_ack && !isBroadcast(p->to)) {
         DEBUG_HEAP_BEFORE;
         auto copy = packetPool.allocCopy(*p);
         DEBUG_HEAP_AFTER("ReliableRouter::send", copy);
 
         // Direct messages get extra retransmissions so the full CR-escalation sequence is exhausted
-        // before giving up.  Broadcasts use the standard count.
-        uint8_t numRetx = isBroadcast(p->to) ? NUM_RELIABLE_RETX : NUM_RELIABLE_RETX_DM;
-        startRetransmission(copy, numRetx);
+        // before giving up.
+        startRetransmission(copy, NUM_RELIABLE_RETX_DM);
+    } else if (p->want_ack) {
+        LOG_DEBUG("Skip retransmission tracking for broadcast want_ack packet");
     }
 
     /* If we have pending retransmissions, add the airtime of this packet to it, because during that time we cannot receive an
@@ -54,14 +55,18 @@ bool ReliableRouter::shouldFilterReceived(const meshtastic_MeshPacket *p)
         auto key = GlobalPacketId(getFrom(p), p->id);
         auto old = findPendingPacket(key);
         if (old) {
-            LOG_DEBUG("Generate implicit ack");
-            // NOTE: we do NOT check p->wantAck here because p is the INCOMING rebroadcast and that packet is not expected to be
-            // marked as wantAck
-            sendAckNak(meshtastic_Routing_Error_NONE, getFrom(p), p->id, old->packet->channel);
-
-            // Only stop retransmissions if the rebroadcast came via LoRa
+            // Only treat an overheard "rebroadcast" of our own packet as an implicit ACK when it
+            // actually came in over LoRa (a real peer forwarded it). Loopbacks from MQTT or other
+            // non-LoRa transports used to synthesize a phantom ACK back to the phone even when no
+            // peer heard us — gate both the ACK and retransmission cancellation on LORA transport.
             if (p->transport_mechanism == meshtastic_MeshPacket_TransportMechanism_TRANSPORT_LORA) {
+                LOG_DEBUG("Generate implicit ack");
+                // NOTE: we do NOT check p->wantAck here because p is the INCOMING rebroadcast and that packet is not expected to
+                // be marked as wantAck
+                sendAckNak(meshtastic_Routing_Error_NONE, getFrom(p), p->id, old->packet->channel);
                 stopRetransmission(key);
+            } else {
+                LOG_DEBUG("Ignore self-heard rebroadcast via non-LoRa transport (likely MQTT loopback)");
             }
         } else {
             LOG_DEBUG("Didn't find pending packet");
