@@ -201,11 +201,62 @@ git commit -m "regen: update generated protobufs"
 
 ### Testing MeshControl
 
-Test scripts in the repo root:
+MeshControl test scripts were in the repo root but have been removed as stray AI-agent artifacts. Integration testing should be done on hardware.
 
-- `test_comprehensive_mc.py` — full MeshControl integration test
-- `test_full_meshcontrol.py` — end-to-end packet flow
-- `test_mc_with_key.py` — HMAC key verification
+---
+
+## Flasher Pipeline (`flasher.bayme.sh`)
+
+### How it works
+
+1. **Push to `baymesh-refactor`** triggers `.github/workflows/build-and-publish.yml`.
+2. **`resolve-targets` job** reads `.github/baymesh-targets.json` (206 boards) and cross-references it against the PlatformIO CI matrix (`bin/generate_ci_matrix.py`) to produce a build matrix. Fails fast if any listed board isn't in the matrix.
+3. **`build` job** (matrix, fail-fast=false) runs `pio run -e <board>` for each target. `platformio-custom.py` renames artifacts to `firmware-<board>-<version>.{bin,uf2,hex}` where `<version>` is derived from `version.properties` + `git rev-parse --short=7 HEAD` (e.g. `2.7.22.86815ef`).
+4. **Version resolution** uses `cd bin && python3 buildinfo.py long` which reads `version.properties`. This matches the filename format `platformio-custom.py` embeds, so the manifest builder regex finds all artifacts.
+5. **`publish` job** downloads all build artifacts, packages them into `firmware-<version>/`, writes two JSON files:
+   - `firmware-<version>.json` — per-board manifest listing flashable file + type per board
+   - `latest.json` — `{"version": "<version>"}` pointer for the flasher to discover the newest build
+6. Pushes the packaged directory to the **`gh-pages` branch of `baymesh/bayme.sh-firmware-pages`** using the `GH_TOKEN` secret (needs write access to that repo).
+7. **`flasher.bayme.sh`** serves the `gh-pages` content of `bayme.sh-firmware-pages`. The flasher fetches `latest.json`, then `firmware-<version>.json`, then serves per-board firmware files.
+
+### Required secrets / infra
+
+| Secret / Resource                                 | Purpose                                                           |
+| ------------------------------------------------- | ----------------------------------------------------------------- |
+| `GH_TOKEN` (repo secret on `RCGV1/firmware-Fork`) | Write access to `baymesh/bayme.sh-firmware-pages` gh-pages branch |
+| `baymesh/bayme.sh-firmware-pages` repo            | GitHub Pages host for firmware files + manifests                  |
+| `flasher.bayme.sh` DNS                            | Points to GitHub Pages for `baymesh/bayme.sh-firmware-pages`      |
+
+### Manifest format
+
+```jsonc
+// firmware-2.7.22.86815ef.json
+{
+  "version": "2.7.22.86815ef",
+  "build_date": "2026-04-16T12:00:00Z",
+  "targets": [
+    { "board": "heltec-v3", "firmware": "firmware-heltec-v3-2.7.22.86815ef.bin", "type": "bin" },
+    ...
+  ]
+}
+```
+
+```jsonc
+// latest.json
+{ "version": "2.7.22.86815ef" }
+```
+
+### Adding / removing boards
+
+Edit `.github/baymesh-targets.json`. Board names must exactly match PlatformIO env names (the `[env:<name>]` headers in `platformio.ini`). The `resolve-targets` job will error on push if any listed board is missing from the matrix, so you catch typos early.
+
+### Release notes
+
+Update `docs/baymesh-release-notes.md` before cutting a notable release — it gets copied into each `firmware-<version>/` directory as `release_notes.md`.
+
+### Manual publish
+
+Use the **Publish Firmware** workflow dispatch (`publish-firmware.yml`) to re-publish without a code push, or to override the version string.
 
 ---
 
