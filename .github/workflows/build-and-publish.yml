@@ -7,13 +7,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Optional firmware version override (defaults to 2.7.21.<short-sha>)"
+        description: "Optional firmware version override (defaults to <major>.<minor>.<build>.<short-sha> from version.properties)"
         required: false
         type: string
   workflow_call:
     inputs:
       version:
-        description: "Optional firmware version override (defaults to 2.7.21.<short-sha>)"
+        description: "Optional firmware version override (defaults to <major>.<minor>.<build>.<short-sha> from version.properties)"
         required: false
         type: string
 
@@ -105,7 +105,9 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           if [ -z "$VERSION" ]; then
-            VERSION="2.7.21.$(git rev-parse --short=7 HEAD)"
+            # Derive from version.properties (major.minor.build) + git short SHA,
+            # matching exactly what the PlatformIO extra_scripts embed in artifact filenames.
+            VERSION="$(cd bin && python3 buildinfo.py long)"
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"

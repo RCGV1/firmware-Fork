@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Optional firmware version override (defaults to 2.7.21.<short-sha>)"
+        description: "Optional firmware version override (defaults to <major>.<minor>.<build>.<short-sha> from version.properties)"
         required: false
         type: string
 
