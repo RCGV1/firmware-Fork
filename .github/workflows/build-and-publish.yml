@@ -124,7 +124,19 @@ jobs:
           python -m pip install --upgrade platformio
 
       - name: Build ${{ matrix.build.board }}
-        run: pio run -e ${{ matrix.build.board }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if pio run -e "${{ matrix.build.board }}"; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "Build failed on attempt $attempt for ${{ matrix.build.board }}. Retrying in 20 seconds..."
+            sleep 20
+          done
 
       - name: Collect ${{ matrix.build.board }} artifacts
         shell: bash

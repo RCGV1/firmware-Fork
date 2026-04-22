@@ -10,7 +10,7 @@
 #include "meshUtils.h"
 #include <FSCommon.h>
 #include <ctype.h> // for better whitespace handling
-#if defined(ARCH_ESP32) && !MESHTASTIC_EXCLUDE_WIFI
+#if defined(ARCH_ESP32)
 #include "MeshtasticOTA.h"
 #endif
 #include "Router.h"

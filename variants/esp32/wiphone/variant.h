@@ -21,7 +21,7 @@
 #define LORA_DIO1 RADIOLIB_NC
 #define LORA_DIO2 RADIOLIB_NC
 
-// This board has no GPS or Screen for now
+// This board has no validated GPS or screen support in this fork for now.
 #undef GPS_RX_PIN
 #undef GPS_TX_PIN
 #define NO_GPS 1
@@ -33,7 +33,7 @@
 #define ST7789_SCK 18
 #define ST7789_CS 5
 #define ST7789_RS 26
-#define USE_TFTDISPLAY 1
+#define USE_TFTDISPLAY 0
 // I don't have a 'wiphone' but this I think should not be defined this way (don't set TFT_BL if we don't have a hw way to control
 // it)
 // #define ST7789_BL -1 // EXTENDER_PIN(9)
