@@ -1,0 +1,8 @@
+{
+  "upstream": "meshtastic/firmware",
+  "upstream_commit": "54e0d8d0ab2ff56b3a9ce967e53f79e49af560fb",
+  "upstream_ref": "v2.7.26.54e0d8d",
+  "track": "release",
+  "policy": "ae6d64ec80",
+  "tag": "release-v2.7.26.54e0d8d-pae6d64ec80"
+}
