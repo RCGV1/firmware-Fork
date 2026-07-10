@@ -1674,6 +1674,37 @@ bool PhoneAPI::handleToRadioPacket(meshtastic_MeshPacket &p)
 {
     printPacket("PACKET FROM PHONE", &p);
 
+#if defined(TEST_PACKET_INJECTOR)
+    // Test-only ingress for encrypted radio frames. It never transmits: hop_limit=0
+    // keeps a validated fixture from escaping the receiver under test.
+    static constexpr uint8_t testPacketInjectorMagic[] = {'M', 'T', 'I', '1'};
+    if (p.which_payload_variant == meshtastic_MeshPacket_decoded_tag && p.decoded.portnum == meshtastic_PortNum_PRIVATE_APP &&
+        p.decoded.payload.size > sizeof(testPacketInjectorMagic) &&
+        memcmp(p.decoded.payload.bytes, testPacketInjectorMagic, sizeof(testPacketInjectorMagic)) == 0) {
+        meshtastic_MeshPacket injected = meshtastic_MeshPacket_init_zero;
+        const auto encodedLength = p.decoded.payload.size - sizeof(testPacketInjectorMagic);
+        if (!pb_decode_from_bytes(p.decoded.payload.bytes + sizeof(testPacketInjectorMagic), encodedLength,
+                                  &meshtastic_MeshPacket_msg, &injected)) {
+            LOG_WARN("Test packet injector rejected invalid MeshPacket fixture");
+            return false;
+        }
+        if (injected.which_payload_variant != meshtastic_MeshPacket_encrypted_tag || injected.from == 0 || injected.to == 0 ||
+            injected.id == 0 || injected.hop_limit != 0 || injected.encrypted.size == 0) {
+            LOG_WARN("Test packet injector rejected unsafe MeshPacket fixture");
+            return false;
+        }
+        LOG_INFO("Test packet injector queued fixture from=0x%08x id=0x%08x channel=0x%02x", injected.from, injected.id,
+                 injected.channel);
+        auto *fixture = packetPool.allocCopy(injected);
+        if (!fixture) {
+            LOG_WARN("Test packet injector could not allocate fixture");
+            return false;
+        }
+        router->enqueueReceivedMessage(fixture);
+        return true;
+    }
+#endif
+
 #if defined(MESHTASTIC_ENCRYPTED_STORAGE) && defined(MESHTASTIC_PHONEAPI_ACCESS_CONTROL)
     // Local admin gating happens here, synchronously on the dispatching
     // task. Two distinct cases:
