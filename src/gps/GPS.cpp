@@ -6,6 +6,7 @@
 #include "Default.h"
 #include "GPS.h"
 #include "GpioLogic.h"
+#include "GpsProfile.h"
 #include "NodeDB.h"
 #include "PowerMon.h"
 #include "Throttle.h"
@@ -340,6 +341,14 @@ uint8_t GPS::makeCASPacket(uint8_t class_id, uint8_t msg_id, uint8_t payload_siz
     DEBUG_PORT.hexDump(MESHTASTIC_LOG_LEVEL_DEBUG, UBXscratch, payload_size + 10);
 #endif
     return (payload_size + 10);
+}
+
+uint8_t GPS::makeCASNAVXPacket(uint8_t dynamicMode)
+{
+    uint8_t config[sizeof(_message_CAS_CFG_NAVX_CONF)];
+    memcpy(config, _message_CAS_CFG_NAVX_CONF, sizeof(config));
+    config[4] = dynamicMode;
+    return makeCASPacket(0x06, 0x07, sizeof(config), config);
 }
 
 GPS_RESPONSE GPS::getACK(const char *message, uint32_t waitMillis)
@@ -867,8 +876,22 @@ bool GPS::setup()
             // only ask for RMC and GGA
             _serial_gps->write("$PCAS03,1,0,0,0,1,0,0,0,0,0,,,0,0*02\r\n");
             delay(250);
-            // Switch to Vehicle Mode, since SoftRF enables Aviation < 2g
-            _serial_gps->write("$PCAS11,3*1E\r\n");
+            switch (config.position.gps_profile) {
+            case meshtastic_Config_PositionConfig_GpsProfile_FIXED_POSITION:
+                _serial_gps->write("$PCAS11,1*1C\r\n");
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_PEDESTRIAN:
+                _serial_gps->write("$PCAS11,2*1F\r\n");
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_AIRBORNE:
+                _serial_gps->write("$PCAS11,6*1B\r\n");
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_VEHICLE:
+            case meshtastic_Config_PositionConfig_GpsProfile_MANUAL:
+            default:
+                _serial_gps->write("$PCAS11,3*1E\r\n");
+                break;
+            }
             delay(250);
         } else if (gnssModel == GNSS_MODEL_MTK_L76B) {
             // Waveshare Pico-GPS hat uses the L76B with 9600 baud
@@ -887,8 +910,20 @@ bool GPS::setup()
             // Enable PPS for 2D/3D fix only
             _serial_gps->write("$PMTK285,3,100*3F\r\n");
             delay(250);
-            // Switch to Fitness Mode, for running and walking purpose with low speed (<5 m/s)
-            _serial_gps->write("$PMTK886,1*29\r\n");
+            switch (config.position.gps_profile) {
+            case meshtastic_Config_PositionConfig_GpsProfile_VEHICLE:
+                _serial_gps->write("$PMTK886,0*28\r\n");
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_AIRBORNE:
+                _serial_gps->write("$PMTK886,3*2B\r\n");
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_FIXED_POSITION:
+            case meshtastic_Config_PositionConfig_GpsProfile_PEDESTRIAN:
+            case meshtastic_Config_PositionConfig_GpsProfile_MANUAL:
+            default:
+                _serial_gps->write("$PMTK886,1*29\r\n");
+                break;
+            }
             delay(250);
         } else if (gnssModel == GNSS_MODEL_MTK_PA1010D) {
             // PA1010D is used in the Pimoroni GPS board.
@@ -903,6 +938,11 @@ bool GPS::setup()
             // Enable SBAS / WAAS
             _serial_gps->write("$PMTK301,2*2E\r\n");
             delay(250);
+            if (config.position.gps_profile != meshtastic_Config_PositionConfig_GpsProfile_MANUAL) {
+                _serial_gps->write(config.position.gps_profile == meshtastic_Config_PositionConfig_GpsProfile_FIXED_POSITION
+                                       ? "$PMTK386,2.0*3F\r\n"
+                                       : "$PMTK386,0.0*3C\r\n");
+            }
         } else if (gnssModel == GNSS_MODEL_MTK_PA1616S) {
             // PA1616S is used in some GPS breakout boards from Adafruit
             // PA1616S does not have GLONASS capability. PA1616D does, but is not implemented here.
@@ -915,9 +955,30 @@ bool GPS::setup()
             // Enable SBAS / WAAS
             _serial_gps->write("$PMTK301,2*2E\r\n");
             delay(250);
+            if (config.position.gps_profile != meshtastic_Config_PositionConfig_GpsProfile_MANUAL) {
+                _serial_gps->write(config.position.gps_profile == meshtastic_Config_PositionConfig_GpsProfile_FIXED_POSITION
+                                       ? "$PMTK386,2.0*3F\r\n"
+                                       : "$PMTK386,0.0*3C\r\n");
+            }
         } else if (gnssModel == GNSS_MODEL_ATGM336H) {
-            // Set the initial configuration of the device - these _should_ work for most AT6558 devices
-            msglen = makeCASPacket(0x06, 0x07, sizeof(_message_CAS_CFG_NAVX_CONF), _message_CAS_CFG_NAVX_CONF);
+            switch (config.position.gps_profile) {
+            case meshtastic_Config_PositionConfig_GpsProfile_FIXED_POSITION:
+                msglen = makeCASNAVXPacket(0x01);
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_PEDESTRIAN:
+                msglen = makeCASNAVXPacket(0x02);
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_VEHICLE:
+                msglen = makeCASNAVXPacket(0x03);
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_AIRBORNE:
+                msglen = makeCASNAVXPacket(0x06);
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_MANUAL:
+            default:
+                msglen = makeCASPacket(0x06, 0x07, sizeof(_message_CAS_CFG_NAVX_CONF), _message_CAS_CFG_NAVX_CONF);
+                break;
+            }
             _serial_gps->write(UBXscratch, msglen);
             if (getACKCas(0x06, 0x07, 250) != GNSS_RESPONSE_OK) {
                 LOG_WARN("ATGM336H: Could not set Config");
@@ -961,6 +1022,11 @@ bool GPS::setup()
             delay(250);
             _serial_gps->write("$CFGMSG,6,1,0\r\n");
             delay(250);
+            if (config.position.gps_profile != meshtastic_Config_PositionConfig_GpsProfile_MANUAL) {
+                _serial_gps->write(config.position.gps_profile == meshtastic_Config_PositionConfig_GpsProfile_FIXED_POSITION
+                                       ? "$CFGDYN,h11,0,51500\r\n"
+                                       : "$CFGDYN,h11,0,0\r\n");
+            }
         } else if (IS_ONE_OF(gnssModel, GNSS_MODEL_AG3335, GNSS_MODEL_AG3352)) {
 
             if (config.lora.region == meshtastic_Config_LoRaConfig_RegionCode_IN ||
@@ -984,6 +1050,23 @@ bool GPS::setup()
 
             delay(250);
             _serial_gps->write("$PAIR513*3D\r\n"); // save configuration
+            switch (config.position.gps_profile) {
+            case meshtastic_Config_PositionConfig_GpsProfile_FIXED_POSITION:
+                _serial_gps->write("$PAIR080,4*2A\r\n");
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_PEDESTRIAN:
+                _serial_gps->write("$PAIR080,1*2F\r\n");
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_VEHICLE:
+                _serial_gps->write("$PAIR080,0*2E\r\n");
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_AIRBORNE:
+                _serial_gps->write("$PAIR080,3*2D\r\n");
+                break;
+            case meshtastic_Config_PositionConfig_GpsProfile_MANUAL:
+            default:
+                break;
+            }
         } else if (gnssModel == GNSS_MODEL_UBLOX6) {
             clearBuffer();
             SEND_UBX_PACKET(0x06, 0x02, _message_DISABLE_TXT_INFO, "disable text info messages", 500);
@@ -1109,6 +1192,17 @@ bool GPS::setup()
             delay(750); // will cause a receiver restart so wait a bit
             SEND_UBX_PACKET(0x06, 0x8A, _message_VALSET_DISABLE_SBAS_BBR, "disable SBAS M10 GPS BBR", 300);
             delay(750); // will cause a receiver restart so wait a bit
+
+            uint8_t dynamicModel = 0;
+            if (GpsProfile::ubxDynamicModel(config.position.gps_profile, dynamicModel)) {
+                const uint8_t payload[] = {0x00, 0x03, 0x00, 0x00, 0x21, 0x00, 0x11, 0x20, dynamicModel};
+                msglen = makeUBXPacket(0x06, 0x8A, sizeof(payload), payload);
+                _serial_gps->write(UBXscratch, msglen);
+                if (getACK(0x06, 0x8A, 300) != GNSS_RESPONSE_OK) {
+                    LOG_WARN("Unable to set M10 dynamic model");
+                }
+                delay(750);
+            }
 
             // Done with initialization, Now enable wanted NMEA messages in BBR layer so they will survive a periodic
             // sleep.

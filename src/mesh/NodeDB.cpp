@@ -20,6 +20,7 @@
 #include "TransmitHistory.h"
 #include "TypeConversions.h"
 #include "error.h"
+#include "gps/GpsProfile.h"
 #include "gps/RTC.h"
 #include "main.h"
 #include "memory/MemAudit.h"
@@ -1461,11 +1462,13 @@ void NodeDB::installRoleDefaults(meshtastic_Config_DeviceConfig_Role role)
     if (role == meshtastic_Config_DeviceConfig_Role_ROUTER) {
         initConfigIntervals();
         initModuleConfigIntervals();
+        GpsProfile::applyFixed(config.position);
         moduleConfig.telemetry.device_update_interval = default_telemetry_broadcast_interval_secs;
         config.device.rebroadcast_mode = meshtastic_Config_DeviceConfig_RebroadcastMode_CORE_PORTNUMS_ONLY;
         owner.has_is_unmessagable = true;
         owner.is_unmessagable = true;
     } else if (role == meshtastic_Config_DeviceConfig_Role_ROUTER_LATE) {
+        GpsProfile::applyFixed(config.position);
         moduleConfig.telemetry.device_update_interval = ONE_DAY;
         owner.has_is_unmessagable = true;
         owner.is_unmessagable = true;

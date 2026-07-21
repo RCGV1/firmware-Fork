@@ -8,6 +8,7 @@
 #include "PositionPrecision.h"
 #include "PowerFSM.h"
 #include "SPILock.h"
+#include "gps/GpsProfile.h"
 #include "gps/RTC.h"
 #include "input/InputBroker.h"
 #include "meshUtils.h"
@@ -906,6 +907,7 @@ void AdminModule::handleSetConfig(const meshtastic_Config &c, bool fromOthers)
             saveChanges(SEGMENT_NODEDATABASE | SEGMENT_CONFIG, false);
         }
         config.position = c.payload_variant.position;
+        GpsProfile::apply(config.position);
 
         // Save nodedb as well in case we got a fixed position packet
         break;
