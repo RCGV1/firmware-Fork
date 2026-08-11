@@ -380,6 +380,19 @@ void PositionModule::sendOurPosition()
     }
 }
 
+void PositionModule::sendLocalPositionToPhone()
+{
+    meshtastic_Position position = localPosition;
+    position.has_latitude_i = true;
+    position.has_longitude_i = true;
+
+    meshtastic_MeshPacket *packet = allocDataProtobuf(position);
+    packet->to = NODENUM_BROADCAST;
+    packet->decoded.want_response = false;
+    packet->priority = meshtastic_MeshPacket_Priority_BACKGROUND;
+    service->sendToPhone(packet);
+}
+
 void PositionModule::sendOurPosition(NodeNum dest, bool wantReplies, uint8_t channel)
 {
     if (!config.position.fixed_position && !nodeDB->hasLocalPositionSinceBoot()) {
