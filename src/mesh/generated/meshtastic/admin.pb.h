@@ -480,6 +480,10 @@ typedef struct _meshtastic_AdminMessage {
         meshtastic_AdminMessage_FindNodeRequest find_node_request;
         /* Result of a find-node request. */
         meshtastic_AdminMessage_FindNodeResponse find_node_response;
+        /* Request an immediate GPS sampling cycle. This does not change the
+     configured GPS or position broadcast intervals. Requests received
+     within 10 seconds are coalesced and use the most recent fix. */
+        bool request_position_update;
         /* Tell the node to factory reset config everything; all device state and configuration will be returned to factory defaults and BLE bonds will be cleared. */
         int32_t factory_reset_device;
         /* Tell the node to reboot into the OTA Firmware in this many seconds (or <0 to cancel reboot)
@@ -703,6 +707,7 @@ extern "C" {
 #define meshtastic_AdminMessage_key_verification_tag 67
 #define meshtastic_AdminMessage_find_node_request_tag 68
 #define meshtastic_AdminMessage_find_node_response_tag 69
+#define meshtastic_AdminMessage_request_position_update_tag 70
 #define meshtastic_AdminMessage_factory_reset_device_tag 94
 #define meshtastic_AdminMessage_reboot_ota_seconds_tag 95
 #define meshtastic_AdminMessage_exit_simulator_tag 96
@@ -767,6 +772,7 @@ X(a, STATIC,   ONEOF,    MESSAGE,  (payload_variant,add_contact,add_contact),  6
 X(a, STATIC,   ONEOF,    MESSAGE,  (payload_variant,key_verification,key_verification),  67) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (payload_variant,find_node_request,find_node_request),  68) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (payload_variant,find_node_response,find_node_response),  69) \
+X(a, STATIC,   ONEOF,    BOOL,     (payload_variant,request_position_update,request_position_update),  70) \
 X(a, STATIC,   ONEOF,    INT32,    (payload_variant,factory_reset_device,factory_reset_device),  94) \
 X(a, STATIC,   ONEOF,    INT32,    (payload_variant,reboot_ota_seconds,reboot_ota_seconds),  95) \
 X(a, STATIC,   ONEOF,    BOOL,     (payload_variant,exit_simulator,exit_simulator),  96) \
