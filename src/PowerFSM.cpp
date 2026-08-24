@@ -29,6 +29,10 @@
 #if MESHTASTIC_EXCLUDE_POWER_FSM
 FakeFsm powerFSM;
 void PowerFSM_setup(){};
+void PowerFSM_notifyInput()
+{
+    powerFSM.trigger(EVENT_INPUT);
+}
 #else
 /// Should we behave as if we have AC power now?
 static bool isPowered()
@@ -463,5 +467,10 @@ void PowerFSM_setup()
 #endif
 
     powerFSM.run_machine(); // run one iteration of the state machine, so we run our on enter tasks for the initial DARK state
+}
+
+void PowerFSM_notifyInput()
+{
+    powerFSM.trigger(EVENT_INPUT);
 }
 #endif
