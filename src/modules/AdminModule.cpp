@@ -1404,13 +1404,10 @@ void AdminModule::handleSetChannel(const meshtastic_Channel &cc)
     if (channels.ensureLicensedOperation()) {
         warnLicensedMode();
     }
-    // Refresh derived state (primaryIndex in particular) BEFORE the precision clamp below. usesPublicKey()
-    // resolves a secondary channel's key against the primary, so it must see the post-update primaryIndex;
-    // running the clamp first could evaluate secondaries against the previous primary and skip the clamp/warning.
+    // Resolve inherited event-channel keys against the updated primary before enforcing precision policy.
     channels.onConfigChanged(); // tell the radios about this change
 
-    // Persist the public-key precision clamp for all channels that may be affected (e.g. secondaries
-    // that inherit a now-public primary key) and warn the client once if anything was coarsened.
+    // Persist event-channel precision restrictions, including channels inheriting the event key.
     bool clamped = false;
     for (uint8_t i = 0; i < channels.getNumChannels(); i++) {
         meshtastic_Channel &ch = channels.getByIndex(i);
