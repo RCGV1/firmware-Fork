@@ -1,0 +1,136 @@
+name: Full Position Firmware
+run-name: ${{ inputs.tag }}
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Immutable upstream commit
+        required: true
+      tag:
+        description: Immutable distribution tag
+        required: true
+      track:
+        type: choice
+        options: [develop, release]
+        required: true
+      upstream_ref:
+        description: Upstream version or commit
+        required: true
+      prerelease:
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: full-position-${{ inputs.track }}-${{ inputs.track == 'release' && inputs.upstream_ref || 'rolling' }}
+  cancel-in-progress: false
+env:
+  SOURCE: ${{ inputs.source }}
+  TAG: ${{ inputs.tag }}
+  TRACK: ${{ inputs.track }}
+  UPSTREAM_REF: ${{ inputs.upstream_ref }}
+  PRERELEASE: ${{ inputs.prerelease }}
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    outputs:
+      source_commit: ${{ steps.prepare.outputs.source_commit }}
+      matrix: ${{ steps.prepare.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: control
+      - uses: actions/checkout@v4
+        with:
+          repository: meshtastic/firmware
+          ref: ${{ inputs.source }}
+          path: firmware
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install platformio==6.1.19
+      - run: python3 -m unittest discover -s control/tools -v
+      - id: prepare
+        run: python3 control/tools/distribute.py prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: board-matrix
+          path: control/matrix.json
+  test:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: control
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_commit }}
+          path: firmware
+          submodules: recursive
+      - name: Build native test environment
+        run: docker build -t full-position-tests -f control/policy/Dockerfile.test control
+      - name: Test all native suites
+        run: |
+          docker run --rm -v "$PWD/firmware:/firmware" full-position-tests bash -c '
+            git config --global --add safe.directory /firmware
+            export PATH="$HOME/.local/bin:$PATH"
+            if test -x bin/run-tests.sh; then
+              ./bin/run-tests.sh
+            else
+              platformio test -e coverage
+            fi'
+  build:
+    needs: [prepare, test]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: control
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_commit }}
+          path: firmware
+          submodules: recursive
+      - run: python3 control/tools/distribute.py build
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          BOARDS: ${{ toJSON(matrix.boards) }}
+          BATCH: ${{ matrix.id }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.id }}
+          path: downloads/
+          if-no-files-found: error
+          retention-days: 7
+  publish:
+    needs: [prepare, test, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: board-matrix
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: firmware-*
+          path: downloads
+          merge-multiple: true
+      - run: python3 tools/distribute.py publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_COMMIT: ${{ needs.prepare.outputs.source_commit }}
