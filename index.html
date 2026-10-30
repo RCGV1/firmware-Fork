@@ -1,71 +1,194 @@
 <!doctype html>
 <html lang="en">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Full Position Firmware</title>
-<style>
-  :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #101714; color: #edf6f0; }
-  body { max-width: 1100px; margin: auto; padding: 60px 24px; }
-  h1 { font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1.05; margin: 16px 0; }
-  p { line-height: 1.6; color: #b9cbbf; max-width: 750px; }
-  a { color: #98edb5; }
-  .label { color: #98edb5; font-size: .8rem; text-transform: uppercase; letter-spacing: .14em; }
-  .tracks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin: 38px 0; }
-  section { border: 1px solid #364b3e; border-radius: 16px; padding: 24px; background: #19231e; }
-  h2 { margin-top: 0; }
-  select, input { box-sizing: border-box; width: 100%; padding: 12px; background: #101714; color: #edf6f0; border: 1px solid #668373; border-radius: 7px; margin: 8px 0; }
-  .button { display: block; padding: 12px; text-align: center; background: #98edb5; color: #102418; border-radius: 7px; text-decoration: none; font-weight: 650; margin: 12px 0; }
-  small { display: block; color: #b9cbbf; margin-top: 12px; line-height: 1.5; overflow-wrap: anywhere; }
-  footer { margin-top: 40px; }
-</style>
-<span class="label">Independent Meshtastic fork</span>
-<h1>Your position.<br>Your precision.</h1>
-<p>Firmware that lets public and unencrypted channels use the position precision you choose, including full precision. Sharing stays off until you enable it. Choose your exact radio board below.</p>
-<p>Checks upstream hourly. Downloads appear after tests and every radio variant build succeed. Radio limits and other firmware behavior follow upstream.</p>
-<div class="tracks" id="tracks" aria-live="polite">Loading available builds…</div>
-<p>Precision 0 disables location sharing. Precision 32 shares your exact coordinates with anyone able to read the channel. These builds are provided by this fork, independently of the Meshtastic project.</p>
-<footer><a href="https://github.com/RCGV1/firmware-Fork/releases">All releases and checksums</a> · <a href="https://github.com/RCGV1/firmware-Fork/actions/workflows/build.yml">Build status</a> · <a href="https://github.com/RCGV1/firmware-Fork">Source and automation</a></footer>
-<script>
-  const repo = 'RCGV1/firmware-Fork';
-  const definitions = [
-    ['Stable', 'Based on the latest upstream stable release.', r => r.tag_name.startsWith('release-') && !r.prerelease],
-    ['Latest release', 'Includes upstream alpha and beta releases.', r => r.tag_name.startsWith('release-')],
-    ['Bleeding edge', 'Built from the upstream develop branch. Experimental.', r => r.tag_name.startsWith('develop-')]
-  ];
-  async function load() {
-    const response = await fetch('releases.json');
-    if (!response.ok) throw new Error('Release listing is temporarily unavailable.');
-    const releases = (await response.json()).filter(r => !r.draft);
-    releases.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    const container = document.getElementById('tracks'); container.replaceChildren();
-    for (const [title, description, matches] of definitions) {
-      const section = document.createElement('section');
-      const heading = document.createElement('h2'); heading.textContent = title; section.append(heading);
-      const detail = document.createElement('p'); detail.textContent = description; section.append(detail);
-      const release = releases.find(matches);
-      if (!release) {
-        const pending = document.createElement('p'); pending.textContent = 'First build pending. See build status below.'; section.append(pending);
-      } else {
-        const version = document.createElement('small'); version.textContent = release.name; section.append(version);
-        const input = document.createElement('input'); input.placeholder = 'Filter boards, e.g. heltec-v3'; input.setAttribute('aria-label', `${title} board filter`); section.append(input);
-        const select = document.createElement('select'); select.setAttribute('aria-label', `${title} radio board`); section.append(select);
-        const download = document.createElement('a'); download.className = 'button'; download.textContent = 'Download firmware ZIP'; section.append(download);
-        const assets = release.assets.filter(a => a.name.startsWith('firmware-') && a.name.endsWith('.zip')).sort((a, b) => a.name.localeCompare(b.name));
-        function update() { if (select.value) { download.href = select.value; download.hidden = false; } else { download.removeAttribute('href'); download.hidden = true; } }
-        function filter() {
-          select.replaceChildren();
-          for (const asset of assets.filter(a => a.name.toLowerCase().includes(input.value.toLowerCase()))) {
-            const option = document.createElement('option'); option.value = asset.browser_download_url;
-            option.textContent = asset.name.slice(9, -(release.tag_name.length + 5)); select.append(option);
-          } update();
-        }
-        input.addEventListener('input', filter); select.addEventListener('change', update); filter();
-        const notes = document.createElement('a'); notes.href = release.html_url; notes.textContent = 'Release notes, checksums and source'; section.append(notes);
-        const date = document.createElement('small'); date.textContent = `Published ${new Date(release.published_at).toLocaleString()}`; section.append(date);
-      }
-      container.append(section);
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Download Full Position firmware for Meshtastic radios. Stable, prerelease and develop builds with configurable public-channel position precision.">
+  <title>Full Position firmware · Downloads</title>
+  <style>
+    :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #24292f; background: #fff; font-synthesis: none; line-height: 1.5; --muted: #57606a; --border: #d8dee4; --link: #0969da; }
+    * { box-sizing: border-box; }
+    body { max-width: 1008px; margin: 0 auto; padding: 36px 32px 24px; }
+    a { color: var(--link); text-decoration: none; text-underline-offset: 3px; }
+    a:hover { text-decoration: underline; }
+    a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+    header { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .project { font-size: 17px; font-weight: 650; letter-spacing: -.3px; }
+    .project span { color: var(--muted); font-weight: 400; }
+    nav { display: flex; gap: 20px; font-size: 13px; }
+    nav a { color: var(--muted); }
+    main { padding-top: 34px; }
+    h1 { font-size: 28px; letter-spacing: -.7px; font-weight: 650; line-height: 1.25; margin: 0 0 10px; }
+    .intro { max-width: 680px; margin: 0; font-size: 15px; color: var(--muted); }
+    .update-note { margin: 22px 0 30px; font-size: 12px; color: var(--muted); }
+    .release-row { display: grid; grid-template-columns: minmax(220px, .9fr) minmax(0, 1.1fr); gap: 48px; padding: 28px 0; border-top: 1px solid var(--border); }
+    h2 { font-size: 17px; font-weight: 650; margin: 0 0 5px; }
+    .description { margin: 0; color: var(--muted); font-size: 13px; }
+    .version { display: block; margin-top: 14px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
+    .date, .availability { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .download-form { display: grid; gap: 12px; }
+    label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; }
+    input, select { width: 100%; min-height: 36px; padding: 7px 10px; border: 1px solid #afb8c1; border-radius: 4px; background: #fff; color: #24292f; font: inherit; font-size: 13px; }
+    input::placeholder { color: #6e7781; }
+    .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding-top: 2px; }
+    .download { display: inline-block; padding: 7px 14px; border: 1px solid #24292f; border-radius: 4px; background: #24292f; color: #fff; font-size: 13px; font-weight: 600; text-align: center; }
+    .download:hover { background: #424a53; text-decoration: none; }
+    [hidden] { display: none !important; }
+    .notes-link { font-size: 12px; }
+    .empty { align-self: center; color: var(--muted); font-size: 13px; }
+    .empty p { margin: 0 0 6px; }
+    .empty a { font-size: 12px; }
+    .no-results { margin: 0; color: var(--muted); font-size: 12px; }
+    .loading, .error { margin: 0; padding: 24px 0; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+    .position-note { border-top: 1px solid var(--border); padding: 24px 0; }
+    .position-note h2 { font-size: 13px; }
+    .position-note p { margin: 6px 0 0; max-width: 750px; color: var(--muted); font-size: 13px; }
+    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .95em; }
+    footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; border-top: 1px solid var(--border); padding-top: 16px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 650px) {
+      body { padding: 24px 20px; }
+      header { flex-direction: column; gap: 12px; }
+      nav { gap: 18px; }
+      main { padding-top: 28px; }
+      h1 { font-size: 25px; }
+      .release-row { grid-template-columns: 1fr; gap: 20px; padding: 24px 0; }
+      .form-actions { justify-content: space-between; }
     }
-  }
-  load().catch(error => { const el = document.getElementById('tracks'); el.textContent = `${error.message} Use the releases link below to download.`; });
-</script>
+  </style>
+</head>
+<body>
+  <header>
+    <div class="project">Full Position <span>/ Meshtastic firmware</span></div>
+    <nav aria-label="Project">
+      <a href="https://github.com/RCGV1/firmware-Fork">Source</a>
+      <a href="https://github.com/RCGV1/firmware-Fork/releases">All releases</a>
+      <a href="https://github.com/RCGV1/firmware-Fork/actions/workflows/build.yml">Build status</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Firmware downloads</h1>
+    <p class="intro">Meshtastic firmware with configurable position precision on public and unencrypted channels. Select a release track and your exact radio board.</p>
+    <p class="update-note">Checks upstream hourly. Downloads are published after testing and all radio builds pass.</p>
+    <div id="tracks" aria-live="polite" aria-busy="true"><p class="loading">Loading releases…</p></div>
+    <noscript><p>JavaScript is needed for board selection. <a href="https://github.com/RCGV1/firmware-Fork/releases">Download directly from GitHub Releases.</a></p></noscript>
+    <aside class="position-note" aria-labelledby="position-heading">
+      <h2 id="position-heading">Position sharing</h2>
+      <p>Sharing stays off until enabled. Precision <code>0</code> disables it; <code>32</code> sends full coordinates. Positions sent on public channels can be read by anyone on that channel.</p>
+    </aside>
+  </main>
+  <footer>
+    <span>Independent fork of Meshtastic. Other firmware behavior follows upstream.</span>
+    <a href="https://github.com/RCGV1/firmware-Fork/releases">Release notes, source and checksums</a>
+  </footer>
+  <script>
+    const buildStatusUrl = 'https://github.com/RCGV1/firmware-Fork/actions/workflows/build.yml';
+    const definitions = [
+      { id: 'stable', title: 'Stable', description: 'Latest upstream stable version.', matches: r => r.tag_name.startsWith('release-') && !r.prerelease },
+      { id: 'release', title: 'Latest release', description: 'Includes upstream alpha and beta versions.', matches: r => r.tag_name.startsWith('release-') },
+      { id: 'develop', title: 'Bleeding edge', description: 'Current develop branch. Experimental.', matches: r => r.tag_name.startsWith('develop-') }
+    ];
+    function element(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text) node.textContent = text;
+      return node;
+    }
+    function link(text, url, className) {
+      const node = element('a', className, text);
+      node.href = url;
+      return node;
+    }
+    function field(labelText, control) {
+      const wrapper = element('div');
+      const label = element('label', '', labelText);
+      label.htmlFor = control.id;
+      wrapper.append(label, control);
+      return wrapper;
+    }
+    function renderTrack(track, release) {
+      const row = element('section', 'release-row');
+      row.setAttribute('aria-labelledby', `${track.id}-heading`);
+      const info = element('div', 'release-info');
+      const heading = element('h2', '', track.title);
+      heading.id = `${track.id}-heading`;
+      info.append(heading, element('p', 'description', track.description));
+      row.append(info);
+      if (!release) {
+        info.append(element('p', 'availability', 'Not yet published'));
+        const empty = element('div', 'empty');
+        empty.append(element('p', '', 'No download available yet.'), link('View build status', buildStatusUrl));
+        row.append(empty);
+        return row;
+      }
+      info.append(element('span', 'version', release.name));
+      const date = new Date(release.published_at);
+      if (!Number.isNaN(date.getTime())) info.append(element('p', 'date', `Published ${date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}`));
+      const form = element('div', 'download-form');
+      const input = element('input');
+      input.id = `${track.id}-filter`;
+      input.type = 'search';
+      input.placeholder = 'e.g. heltec-v3 or rak4631';
+      input.autocomplete = 'off';
+      const select = element('select');
+      select.id = `${track.id}-board`;
+      const download = element('a', 'download', 'Download ZIP');
+      const noResults = element('p', 'no-results', 'No matching boards. Try another name.');
+      noResults.setAttribute('role', 'status');
+      noResults.hidden = true;
+      const actions = element('div', 'form-actions');
+      actions.append(download, link('Release details', release.html_url, 'notes-link'));
+      form.append(field('Filter boards', input), field('Radio board', select), noResults, actions);
+      const assets = release.assets
+        .filter(asset => asset.name.startsWith('firmware-') && asset.name.endsWith('.zip'))
+        .map(asset => ({ ...asset, board: asset.name.slice(9, -(release.tag_name.length + 5)) }))
+        .sort((a, b) => a.board.localeCompare(b.board));
+      function updateDownload() {
+        download.hidden = !select.value;
+        if (select.value) download.href = select.value;
+        else download.removeAttribute('href');
+      }
+      function filterBoards() {
+        const previous = select.value;
+        const search = input.value.trim().toLowerCase();
+        const matches = assets.filter(asset => asset.board.toLowerCase().includes(search));
+        select.replaceChildren();
+        const placeholder = element('option', '', 'Select your board');
+        placeholder.value = '';
+        placeholder.disabled = true;
+        select.append(placeholder);
+        for (const asset of matches) {
+          const option = element('option', '', asset.board);
+          option.value = asset.browser_download_url;
+          select.append(option);
+        }
+        select.value = matches.some(asset => asset.browser_download_url === previous) ? previous : '';
+        select.disabled = matches.length === 0;
+        noResults.hidden = matches.length !== 0;
+        updateDownload();
+      }
+      input.addEventListener('input', filterBoards);
+      select.addEventListener('change', updateDownload);
+      filterBoards();
+      row.append(form);
+      return row;
+    }
+    async function load() {
+      const container = document.getElementById('tracks');
+      try {
+        const response = await fetch('releases.json');
+        if (!response.ok) throw new Error('Release listing unavailable');
+        const releases = (await response.json()).filter(release => !release.draft);
+        releases.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        container.replaceChildren(...definitions.map(track => renderTrack(track, releases.find(track.matches))));
+      } catch {
+        const error = element('p', 'error', 'Could not load releases. ');
+        error.append(link('Browse downloads on GitHub', 'https://github.com/RCGV1/firmware-Fork/releases'));
+        container.replaceChildren(error);
+      } finally {
+        container.setAttribute('aria-busy', 'false');
+      }
+    }
+    load();
+  </script>
+</body>
 </html>
