@@ -83,6 +83,20 @@ def customize(root):
     regression = root / "test/test_fork_position_policy/test_main.cpp"
     regression.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(CONTROL / "policy/test_main.cpp", regression)
+    fix_legacy_rp_package_names(root)
+
+
+def fix_legacy_rp_package_names(root):
+    for platform in ("rp2040", "rp2350"):
+        path = root / f"variants/{platform}/{platform}.ini"
+        if path.exists():
+            text = path.read_text()
+            # The legacy alias installs an unused package; pin the framework PlatformIO actually builds.
+            corrected = text.replace(
+                "  arduino-pico@https://github.com/earlephilhower/arduino-pico/releases/download/",
+                "  framework-arduinopico@https://github.com/earlephilhower/arduino-pico/releases/download/")
+            if corrected != text:
+                path.write_text(corrected)
 
 
 def prepare():
@@ -100,7 +114,7 @@ def prepare():
                 "policy": policy_id(), "tag": tag}
     (root / "full-position-build.json").write_text(json.dumps(metadata, indent=2) + "\n")
     run("git", "add", "src/mesh/PositionPrecision.cpp", "src/mesh/PositionPrecision.h",
-        "src/modules/AdminModule.cpp", "test", ".github/workflows", "full-position-build.json", cwd=root)
+        "src/modules/AdminModule.cpp", "test", "variants", ".github/workflows", "full-position-build.json", cwd=root)
     date = run("git", "show", "-s", "--format=%cI", "HEAD", cwd=root, capture=True)
     env = dict(os.environ, GIT_AUTHOR_DATE=date, GIT_COMMITTER_DATE=date)
     run("git", "-c", "user.name=Full Position Builds", "-c", "user.email=full-position@users.noreply.github.com",

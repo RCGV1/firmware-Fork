@@ -51,6 +51,22 @@ class DistributionTests(unittest.TestCase):
         self.assertEqual({g["boards"][0]: g["required"] for g in groups},
                          {"supported": True, "experimental": False})
 
+    def test_legacy_rp_framework_pin_is_used_without_changing_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            url = "https://github.com/earlephilhower/arduino-pico/releases/download/5.4.4/rp2040-5.4.4.zip"
+            for platform in ("rp2040", "rp2350"):
+                path = root / f"variants/{platform}/{platform}.ini"
+                path.parent.mkdir(parents=True)
+                path.write_text(f"platform_packages =\n  arduino-pico@{url}\n")
+            distribute.fix_legacy_rp_package_names(root)
+            for platform in ("rp2040", "rp2350"):
+                path = root / f"variants/{platform}/{platform}.ini"
+                self.assertEqual(path.read_text(), f"platform_packages =\n  framework-arduinopico@{url}\n")
+                before = path.read_bytes()
+                distribute.fix_legacy_rp_package_names(root)
+                self.assertEqual(path.read_bytes(), before)
+
     def test_experimental_failure_does_not_remove_supported_board_gate(self):
         matrix = [dict(platform="esp32", board="supported", required=True),
                   dict(platform="esp32", board="experimental", required=False)]
