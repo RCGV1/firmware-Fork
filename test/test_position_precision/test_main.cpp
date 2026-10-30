@@ -1,3 +1,7 @@
+// PositionPrecision.cpp must honor the configured precision on public and private channels, including
+// serialized position packets. These cases guard against restoring the public-key 15-bit cap while
+// retaining precision-zero scrubbing and the disabled/event-channel restrictions.
+
 #include "Channels.h"
 #include "GeoCoord.h"
 #include "NodeDB.h"
@@ -125,7 +129,7 @@ static void test_getPositionPrecisionForChannel_secondaryWithoutModuleSettingsFa
 }
 
 // End-to-end via the channelIndex overload + live channels singleton, exercising getKey()'s 1-byte->16-byte expansion.
-static void test_getPositionPrecisionForChannel_clampsPreciseOnDefaultKeyChannel()
+static void test_getPositionPrecisionForChannel_keepsPreciseOnDefaultKeyChannel()
 {
     channels.initDefaults(); // channel 0: primary, default key (psk {0x01}) -> publicly decryptable
     uint8_t idx = 0;
@@ -135,7 +139,62 @@ static void test_getPositionPrecisionForChannel_clampsPreciseOnDefaultKeyChannel
     ch.settings.has_module_settings = true;
     ch.settings.module_settings.position_precision = 32; // user requests "Precise" on a public channel
 
-    TEST_ASSERT_EQUAL_UINT32(MAX_POSITION_PRECISION_PUBLIC_KEY, getPositionPrecisionForChannel(idx));
+    TEST_ASSERT_EQUAL_UINT32(32, getPositionPrecisionForChannel(idx));
+}
+
+static void test_getPositionPrecisionForChannel_honorsPrecisionOnUnencryptedChannels()
+{
+    channels.initDefaults();
+    meshtastic_Channel &ch = channels.getByIndex(0);
+    ch.settings.has_module_settings = true;
+    ch.settings.psk.bytes[0] = 0;
+
+    for (uint8_t pskSize : {0, 1}) {
+        ch.settings.psk.size = pskSize;
+        for (uint32_t precision : {0U, 15U, 16U, 19U, 31U, 32U}) {
+            ch.settings.module_settings.position_precision = precision;
+            TEST_ASSERT_EQUAL_UINT32(precision, getPositionPrecisionForChannel(uint8_t{0}));
+        }
+    }
+}
+
+static void test_getPositionPrecisionForChannel_keepsPreciseOnInheritedPublicKey()
+{
+    channels.initDefaults();
+    meshtastic_Channel &primary = channels.getByIndex(0);
+    primary.settings.psk.size = 1;
+    primary.settings.psk.bytes[0] = 1;
+    meshtastic_Channel secondary = makeChannel(meshtastic_Channel_Role_SECONDARY, true, 32);
+    secondary.index = 1;
+    channels.setChannel(secondary);
+    channels.onConfigChanged();
+
+    TEST_ASSERT_EQUAL_UINT32(32, getPositionPrecisionForChannel(uint8_t{1}));
+}
+
+static void test_applyPositionPrecisionForChannel_publicPacketKeepsExactCoordinates()
+{
+    channels.initDefaults();
+    meshtastic_Channel &ch = channels.getByIndex(0);
+    ch.settings.psk.size = 1;
+    ch.settings.psk.bytes[0] = 1;
+    ch.settings.has_module_settings = true;
+    ch.settings.module_settings.position_precision = 32;
+    meshtastic_Position position = makePosition();
+    meshtastic_MeshPacket packet = meshtastic_MeshPacket_init_default;
+    packet.which_payload_variant = meshtastic_MeshPacket_decoded_tag;
+    packet.decoded.portnum = meshtastic_PortNum_POSITION_APP;
+    packet.decoded.payload.size = pb_encode_to_bytes(packet.decoded.payload.bytes, sizeof(packet.decoded.payload.bytes),
+                                                     &meshtastic_Position_msg, &position);
+
+    TEST_ASSERT_TRUE(applyPositionPrecisionForChannel(packet, 0));
+
+    meshtastic_Position decoded = meshtastic_Position_init_default;
+    TEST_ASSERT_TRUE(
+        pb_decode_from_bytes(packet.decoded.payload.bytes, packet.decoded.payload.size, &meshtastic_Position_msg, &decoded));
+    TEST_ASSERT_EQUAL_INT32(position.latitude_i, decoded.latitude_i);
+    TEST_ASSERT_EQUAL_INT32(position.longitude_i, decoded.longitude_i);
+    TEST_ASSERT_EQUAL_UINT32(32, decoded.precision_bits);
 }
 
 static void test_getPositionPrecisionForChannel_keepsPreciseOnStrongKeyChannel()
@@ -448,9 +507,18 @@ static void test_getPositionPrecisionForChannel_nonEventFullKeyIsHonored()
     TEST_ASSERT_EQUAL_UINT32(16, getPositionPrecisionForChannel(channel));
 }
 
-void setUp(void) {}
+static meshtastic_ChannelFile savedChannelFile;
 
-void tearDown(void) {}
+void setUp(void)
+{
+    savedChannelFile = channelFile;
+}
+
+void tearDown(void)
+{
+    channelFile = savedChannelFile;
+    channels.onConfigChanged();
+}
 
 extern "C" {
 void setup()
@@ -465,7 +533,10 @@ void setup()
     RUN_TEST(test_getPositionPrecisionForChannel_explicitZeroDisablesPrimary);
     RUN_TEST(test_getPositionPrecisionForChannel_primaryWithoutModuleSettingsFailsClosed);
     RUN_TEST(test_getPositionPrecisionForChannel_secondaryWithoutModuleSettingsFailsClosed);
-    RUN_TEST(test_getPositionPrecisionForChannel_clampsPreciseOnDefaultKeyChannel);
+    RUN_TEST(test_getPositionPrecisionForChannel_keepsPreciseOnDefaultKeyChannel);
+    RUN_TEST(test_getPositionPrecisionForChannel_honorsPrecisionOnUnencryptedChannels);
+    RUN_TEST(test_getPositionPrecisionForChannel_keepsPreciseOnInheritedPublicKey);
+    RUN_TEST(test_applyPositionPrecisionForChannel_publicPacketKeepsExactCoordinates);
     RUN_TEST(test_getPositionPrecisionForChannel_keepsPreciseOnStrongKeyChannel);
     RUN_TEST(test_cryptoKeyIsPublic_openKeyIsPublic);
     RUN_TEST(test_cryptoKeyIsPublic_defaultKeyIsPublic);
