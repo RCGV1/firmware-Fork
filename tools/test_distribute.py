@@ -43,6 +43,23 @@ class DistributionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Unknown upstream"):
                 distribute.customize(root)
 
+    def test_experimental_boards_are_attempted_separately(self):
+        matrix = [dict(platform="esp32", board="supported", required=True),
+                  dict(platform="esp32", board="experimental", required=False)]
+        groups = distribute.group_boards(matrix)
+        self.assertEqual(len(groups), 2)
+        self.assertEqual({g["boards"][0]: g["required"] for g in groups},
+                         {"supported": True, "experimental": False})
+
+    def test_experimental_failure_does_not_remove_supported_board_gate(self):
+        matrix = [dict(platform="esp32", board="supported", required=True),
+                  dict(platform="esp32", board="experimental", required=False)]
+        self.assertEqual(distribute.validate_outputs(matrix, [dict(board="supported")]), ["experimental"])
+        with self.assertRaisesRegex(ValueError, "Incomplete"):
+            distribute.validate_outputs(matrix, [dict(board="experimental")])
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            distribute.validate_outputs(matrix, [dict(board="supported"), dict(board="supported")])
+
     def test_missing_board_prevents_publication(self):
         with tempfile.TemporaryDirectory() as directory:
             previous = Path.cwd()

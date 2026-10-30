@@ -4,9 +4,9 @@ Custom Meshtastic firmware that honors configured position precision on public a
 
 [Download firmware](https://rcgv1.github.io/firmware-Fork/) · [Releases](https://github.com/RCGV1/firmware-Fork/releases) · [Build status](https://github.com/RCGV1/firmware-Fork/actions/workflows/build.yml)
 
-The updater checks upstream hourly and builds every radio board variant, including upstream's extra variants. The download page offers stable, latest release (including alpha/beta), and bleeding edge from `develop`. Linux/macOS/Windows host applications and test environments are excluded from the radio firmware downloads.
+The updater checks upstream hourly and builds every supported radio board in upstream's release matrix. It also attempts all experimental `extra` variants. The download page offers stable, latest release (including alpha/beta), and bleeding edge from `develop`. Linux/macOS/Windows host applications and test environments are excluded from the radio firmware downloads.
 
-Each build starts from an immutable upstream commit, applies `policy/position.patch`, runs the native tests, and builds all radio variants. A release is published only after every required build and checksum check succeeds. Failed updates leave previous downloads available. Upstream releases published after October 29, 2026 are retained alongside the latest stable and prerelease available at setup.
+Each build starts from an immutable upstream commit, applies `policy/position.patch`, runs the native tests, and builds all radio variants. A release is published only after all native tests, all upstream release-matrix boards, and every artifact checksum pass. Experimental variants are downloadable only when they build successfully; unavailable experimental boards are listed explicitly in the release notes and manifest. Failed supported-board updates leave previous downloads available. Upstream releases published after October 29, 2026 are retained alongside the latest stable and prerelease available at setup.
 
 ZIPs include the upstream installation files and build provenance. Releases provide SHA-256 checksums, a board manifest, and a source tag pointing to the customized source. The `builds/*` branches preserve each source snapshot. Changes in upstream precision handling that prevent the patch from applying stop publication until reviewed.
 

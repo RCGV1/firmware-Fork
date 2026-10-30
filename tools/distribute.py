@@ -112,6 +112,10 @@ def prepare():
     run("git", "push", "distribution", f"HEAD:refs/heads/builds/{tag}", cwd=root)
     matrix = json.loads(run(sys.executable, "bin/generate_ci_matrix.py", "all", "--level", "extra",
                             cwd=root, capture=True))
+    supported = {board["board"] for board in json.loads(run(
+        sys.executable, "bin/generate_ci_matrix.py", "all", cwd=root, capture=True))}
+    for board in matrix:
+        board["required"] = board["board"] in supported
     groups = group_boards(matrix)
     (CONTROL / "matrix.json").write_text(json.dumps(matrix))
     with open(os.environ["GITHUB_OUTPUT"], "a") as output:
@@ -122,12 +126,12 @@ def group_boards(matrix):
     platforms = {}
     for board in matrix:
         if board["platform"] != "native":
-            platforms.setdefault(board["platform"], []).append(board["board"])
+            platforms.setdefault((board["platform"], board.get("required", True)), []).append(board["board"])
     groups = []
-    for platform, boards in sorted(platforms.items()):
+    for (platform, required), boards in sorted(platforms.items()):
         for start in range(0, len(boards), 4):
-            groups.append({"platform": platform, "boards": boards[start:start + 4],
-                           "id": f"{platform}-{start // 4:03d}"})
+            groups.append({"platform": platform, "boards": boards[start:start + 4], "required": required,
+                           "id": f"{platform}-{'supported' if required else 'extra'}-{start // 4:03d}"})
     if not groups or len(groups) > 256:
         raise ValueError("Invalid board matrix")
     return groups
@@ -145,9 +149,15 @@ def build():
     for board in json.loads(os.environ["BOARDS"]):
         if not re.fullmatch(r"[A-Za-z0-9_-]+", board):
             raise ValueError("Invalid board name")
-        run("docker", "run", "--rm", "-e", "GITHUB_ACTIONS=true", "-e", "MT_TARGET=build",
-            "-e", f"MT_PLATFORM={platform}", "-e", f"MT_ENV={board}",
-            "-e", "PLATFORMIO_BUILD_DIR=/workspace/.pio/build", "-v", f"{root}:/workspace", digest)
+        try:
+            run("docker", "run", "--rm", "-e", "GITHUB_ACTIONS=true", "-e", "MT_TARGET=build",
+                "-e", f"MT_PLATFORM={platform}", "-e", f"MT_ENV={board}",
+                "-e", "PLATFORMIO_BUILD_DIR=/workspace/.pio/build", "-v", f"{root}:/workspace", digest)
+        except subprocess.CalledProcessError:
+            if os.environ.get("REQUIRED", "true") == "true":
+                raise
+            print(f"::warning::Experimental board {board} did not build; no firmware will be published for it", flush=True)
+            continue
         release = root / "release"
         ota = None
         if platform in ("esp32", "esp32s3"):
@@ -170,17 +180,24 @@ def build():
     (output / f"batch-{os.environ['BATCH']}.json").write_text(json.dumps(entries, indent=2))
 
 
+def validate_outputs(matrix, entries):
+    radio = {b["board"]: b for b in matrix if b["platform"] != "native"}
+    required = {name for name, board in radio.items() if board.get("required", True)}
+    actual = {b["board"] for b in entries}
+    if not required.issubset(actual) or not actual.issubset(radio) or len(actual) != len(entries):
+        raise ValueError("Incomplete or duplicate supported-board outputs; release will remain unpublished")
+    return sorted(set(radio) - actual)
+
+
 def publish():
     root = Path("downloads")
     entries = [entry for path in sorted(root.glob("batch-*.json")) for entry in json.loads(path.read_text())]
-    expected = {b["board"] for b in json.loads(Path("matrix.json").read_text()) if b["platform"] != "native"}
-    if {b["board"] for b in entries} != expected or len(entries) != len(expected):
-        raise ValueError("Incomplete or duplicate board outputs; release will remain unpublished")
+    unavailable = validate_outputs(json.loads(Path("matrix.json").read_text()), entries)
     for entry in entries:
         actual = hashlib.sha256((root / entry["file"]).read_bytes()).hexdigest()
         if actual != entry["sha256"]:
             raise ValueError(f"Checksum mismatch: {entry['board']}")
-    (root / "manifest.json").write_text(json.dumps({"boards": entries}, indent=2) + "\n")
+    (root / "manifest.json").write_text(json.dumps({"boards": entries, "unavailable_experimental_boards": unavailable}, indent=2) + "\n")
     (root / "SHA256SUMS").write_text("".join(f"{b['sha256']}  {b['file']}\n" for b in entries))
     repo, tag, sha = os.environ["GITHUB_REPOSITORY"], os.environ["TAG"], os.environ["SOURCE_COMMIT"]
     prerelease = os.environ["PRERELEASE"] == "true"
@@ -189,6 +206,10 @@ def publish():
                      f"Public and unencrypted channels honor configured position precision, including full precision (32). Position sharing remains opt-in; precision 0 disables it.\n\n"
                      f"Includes {len(entries)} radio board variants. Download the ZIP matching your exact board. Checksums are in SHA256SUMS; complete source is at commit `{sha}`.\n\n"
                      f"Radio limits and other firmware behavior follow upstream. This is an independent fork.\n")
+    if unavailable:
+        with notes.open("a") as output:
+            output.write("\nExperimental variants without a successful build (no download provided): "
+                         + ", ".join(f"`{board}`" for board in unavailable) + ".\n")
     view = subprocess.run(["gh", "release", "view", tag, "--repo", repo, "--json", "isDraft"],
                           capture_output=True, text=True)
     if view.returncode:
