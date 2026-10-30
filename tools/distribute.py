@@ -31,6 +31,7 @@ def policy_id():
     data = b"".join((CONTROL / "policy" / name).read_bytes()
                     for name in ("position.patch", "test_main.cpp"))
     data += Path(__file__).read_bytes()
+    data += (CONTROL / "tools/legacy-esp-entrypoint.sh").read_bytes()
     return hashlib.sha256(data).hexdigest()[:10]
 
 
@@ -164,9 +165,13 @@ def build():
         if not re.fullmatch(r"[A-Za-z0-9_-]+", board):
             raise ValueError("Invalid board name")
         try:
-            run("docker", "run", "--rm", "-e", "GITHUB_ACTIONS=true", "-e", "MT_TARGET=build",
+            legacy = legacy_esp_core_needed(root, platform)
+            launcher = ["--entrypoint", "/bin/bash", "-v",
+                        f"{CONTROL / 'tools/legacy-esp-entrypoint.sh'}:/full-position-entrypoint.sh:ro"] if legacy else []
+            run("docker", "run", "--rm", *launcher, "-e", "GITHUB_ACTIONS=true", "-e", "MT_TARGET=build",
                 "-e", f"MT_PLATFORM={platform}", "-e", f"MT_ENV={board}",
-                "-e", "PLATFORMIO_BUILD_DIR=/workspace/.pio/build", "-v", f"{root}:/workspace", digest)
+                "-e", "PLATFORMIO_BUILD_DIR=/workspace/.pio/build", "-v", f"{root}:/workspace", digest,
+                *(["/full-position-entrypoint.sh"] if legacy else []))
         except subprocess.CalledProcessError:
             if os.environ.get("REQUIRED", "true") == "true":
                 raise
@@ -190,8 +195,18 @@ def build():
             archive.write(root / "full-position-build.json", "full-position-build.json")
         entries.append({"board": board, "platform": platform, "file": filename,
                         "sha256": hashlib.sha256((output / filename).read_bytes()).hexdigest(),
-                        "builder_image": digest})
+                        "builder_image": digest,
+                        "core_override": "pioarduino==6.1.19" if legacy else None})
     (output / f"batch-{os.environ['BATCH']}.json").write_text(json.dumps(entries, indent=2))
+
+
+def legacy_esp_core_needed(root, platform):
+    path = root / "variants/esp32/esp32-common.ini"
+    if not platform.startswith("esp32") or not path.exists():
+        return False
+    return any(line.strip().startswith("https://") and
+               re.search(r"/55\.03\.311(?:[/.]|$)", line.strip())
+               for line in path.read_text().splitlines())
 
 
 def validate_outputs(matrix, entries):

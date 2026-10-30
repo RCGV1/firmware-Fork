@@ -1,0 +1,41 @@
+name: Check firmware board
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Customized source commit or builds branch
+        required: true
+      platform:
+        description: Radio architecture
+        required: true
+      board:
+        description: PlatformIO board environment
+        required: true
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: control
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_commit }}
+          path: firmware
+          submodules: recursive
+      - run: python3 control/tools/distribute.py build
+        env:
+          PLATFORM: ${{ inputs.platform }}
+          BOARDS: ${{ toJSON(fromJSON(format('["{0}"]', inputs.board))) }}
+          BATCH: check
+          REQUIRED: "true"
+          TAG: check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: board-check
+          path: downloads/
+          if-no-files-found: error
+          retention-days: 7

@@ -76,6 +76,18 @@ class DistributionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate"):
             distribute.validate_outputs(matrix, [dict(board="supported"), dict(board="supported")])
 
+    def test_legacy_esp_core_follows_active_platform_not_commented_url(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "variants/esp32/esp32-common.ini"
+            path.parent.mkdir(parents=True)
+            legacy = "https://github.com/meshtastic/pioarduino-platform-espressif32/archive/refs/heads/55.03.311.zip"
+            path.write_text(f"platform =\n  {legacy}\n")
+            self.assertTrue(distribute.legacy_esp_core_needed(root, "esp32s3"))
+            self.assertFalse(distribute.legacy_esp_core_needed(root, "rp2040"))
+            path.write_text(f"platform =\n  https://example.com/55.03.312-1/platform.zip\n  ; {legacy}\n")
+            self.assertFalse(distribute.legacy_esp_core_needed(root, "esp32s3"))
+
     def test_missing_board_prevents_publication(self):
         with tempfile.TemporaryDirectory() as directory:
             previous = Path.cwd()
