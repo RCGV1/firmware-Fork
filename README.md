@@ -12,4 +12,6 @@ ZIPs include the upstream installation files and build provenance. Releases prov
 
 This is an independent fork. Radio limits and other firmware behavior follow upstream. Full-precision positions sent on public channels can be read by anyone with access to that channel.
 
+Upstream GitHub Actions workflows are omitted from generated firmware snapshots; this branch owns the build and publishing workflows. The updater uses the repository's built-in GitHub token and needs no personal access token.
+
 The `distribution` branch contains this publishing service. Firmware source is on the release tags and `builds/*` branches; the initial development customization is on [`full-precision-public-channels`](https://github.com/RCGV1/firmware-Fork/tree/full-precision-public-channels).

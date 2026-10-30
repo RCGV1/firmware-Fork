@@ -30,6 +30,7 @@ def api(path):
 def policy_id():
     data = b"".join((CONTROL / "policy" / name).read_bytes()
                     for name in ("position.patch", "test_main.cpp"))
+    data += Path(__file__).read_bytes()
     return hashlib.sha256(data).hexdigest()[:10]
 
 
@@ -92,12 +93,14 @@ def prepare():
     if run("git", "rev-parse", "HEAD", cwd=root, capture=True) != source:
         raise ValueError("Source checkout does not match the requested upstream commit")
     customize(root)
+    # Publishing automation lives on distribution; firmware snapshots do not carry upstream workflows.
+    shutil.rmtree(root / ".github/workflows")
     metadata = {"upstream": UPSTREAM, "upstream_commit": source,
                 "upstream_ref": os.environ["UPSTREAM_REF"], "track": os.environ["TRACK"],
                 "policy": policy_id(), "tag": tag}
     (root / "full-position-build.json").write_text(json.dumps(metadata, indent=2) + "\n")
     run("git", "add", "src/mesh/PositionPrecision.cpp", "src/mesh/PositionPrecision.h",
-        "src/modules/AdminModule.cpp", "test", "full-position-build.json", cwd=root)
+        "src/modules/AdminModule.cpp", "test", ".github/workflows", "full-position-build.json", cwd=root)
     date = run("git", "show", "-s", "--format=%cI", "HEAD", cwd=root, capture=True)
     env = dict(os.environ, GIT_AUTHOR_DATE=date, GIT_COMMITTER_DATE=date)
     run("git", "-c", "user.name=Full Position Builds", "-c", "user.email=full-position@users.noreply.github.com",
