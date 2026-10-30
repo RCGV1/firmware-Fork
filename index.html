@@ -33,7 +33,7 @@
     ['Bleeding edge', 'Built from the upstream develop branch. Experimental.', r => r.tag_name.startsWith('develop-')]
   ];
   async function load() {
-    const response = await fetch(`https://api.github.com/repos/${repo}/releases?per_page=100`);
+    const response = await fetch('releases.json');
     if (!response.ok) throw new Error('Release listing is temporarily unavailable.');
     const releases = (await response.json()).filter(r => !r.draft);
     releases.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));

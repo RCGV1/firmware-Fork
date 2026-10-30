@@ -79,7 +79,8 @@ jobs:
         run: docker build -t full-position-tests -f control/policy/Dockerfile.test control
       - name: Test all native suites
         run: |
-          docker run --rm -v "$PWD/firmware:/firmware" full-position-tests bash -c '
+          docker run --rm -v "$PWD/firmware:/source:ro" full-position-tests bash -c '
+            cp -R /source/. /firmware/
             git config --global --add safe.directory /firmware
             export PATH="$HOME/.local/bin:$PATH"
             if test -x bin/run-tests.sh; then
@@ -120,6 +121,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4

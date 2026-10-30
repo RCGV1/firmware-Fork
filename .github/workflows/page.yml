@@ -20,7 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - run: mkdir site && cp index.html site/index.html
+      - name: Prepare page and public release listing
+        run: |
+          mkdir site
+          cp index.html site/index.html
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > site/releases.json
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

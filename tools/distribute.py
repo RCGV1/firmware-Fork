@@ -204,6 +204,7 @@ def publish():
         run("gh", "release", "upload", tag, "--repo", repo, "--clobber", *assets[start:start + 20])
     run("gh", "release", "edit", tag, "--repo", repo, "--draft=false",
         f"--prerelease={str(prerelease).lower()}", f"--latest={str(not prerelease).lower()}")
+    run("gh", "workflow", "run", "page.yml", "--repo", repo, "--ref", "distribution")
 
 
 if __name__ == "__main__":
