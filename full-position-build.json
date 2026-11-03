@@ -1,0 +1,8 @@
+{
+  "upstream": "meshtastic/firmware",
+  "upstream_commit": "12e81f1087697dcca4fcf1201839e9f203284fb8",
+  "upstream_ref": "12e81f1087697dcca4fcf1201839e9f203284fb8",
+  "track": "develop",
+  "policy": "dd677e3e94",
+  "tag": "develop-12e81f108769-pdd677e3e94"
+}
