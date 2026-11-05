@@ -2,7 +2,7 @@ name: Publish downloads page
 on:
   push:
     branches: [distribution]
-    paths: [index.html, .github/workflows/page.yml]
+    paths: [index.html, analytics.js, analytics.json, tools/test_analytics.cjs, .github/workflows/page.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,14 +19,24 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Test analytics and download event handling
+        run: node --test tools/test_analytics.cjs
       - uses: actions/configure-pages@v5
       - name: Prepare page and public release listing
         run: |
           mkdir site
-          cp index.html site/index.html
+          cp index.html analytics.js site/
+          python3 - <<'PY'
+          import json, os, pathlib, re
+          website_id = os.environ.get('UMAMI_WEBSITE_ID', '').strip()
+          if website_id and not re.fullmatch(r'[a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}', website_id):
+              raise ValueError('UMAMI_WEBSITE_ID must be the public website UUID from Umami')
+          pathlib.Path('site/analytics.json').write_text(json.dumps({'websiteId': website_id or None}) + '\n')
+          PY
           gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > site/releases.json
         env:
           GH_TOKEN: ${{ github.token }}
+          UMAMI_WEBSITE_ID: ${{ vars.UMAMI_WEBSITE_ID }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

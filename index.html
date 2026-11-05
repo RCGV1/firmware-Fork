@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Download Full Position firmware for Meshtastic radios. Stable, prerelease and develop builds with configurable public-channel position precision.">
   <title>Full Position firmware · Downloads</title>
+  <script defer src="analytics.js"></script>
   <style>
     :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #24292f; background: #fff; font-synthesis: none; line-height: 1.5; --muted: #57606a; --border: #d8dee4; --link: #0969da; }
     * { box-sizing: border-box; }
@@ -79,6 +80,7 @@
   <footer>
     <span>Independent fork of Meshtastic. Other firmware behavior follows upstream.</span>
     <a href="https://github.com/RCGV1/firmware-Fork/releases">Release notes, source and checksums</a>
+    <span><a href="?analytics=off">Exclude this browser from analytics</a> · <a href="https://umami.is/privacy">Analytics privacy</a></span>
   </footer>
   <script>
     const buildStatusUrl = 'https://github.com/RCGV1/firmware-Fork/actions/workflows/build.yml';
@@ -168,6 +170,15 @@
       }
       input.addEventListener('input', filterBoards);
       select.addEventListener('change', updateDownload);
+      function trackDownload(event) {
+        if (event.type === 'auxclick' && event.button !== 1) return;
+        const asset = assets.find(asset => asset.browser_download_url === select.value);
+        if (asset) window.fullPositionAnalytics?.download(event, {
+          track: track.id, release: release.tag_name, board: asset.board
+        });
+      }
+      download.addEventListener('click', trackDownload);
+      download.addEventListener('auxclick', trackDownload);
       filterBoards();
       row.append(form);
       return row;
