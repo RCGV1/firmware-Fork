@@ -1,0 +1,10 @@
+{
+  "name": "WadaPacketComms",
+  "version": "1.0.0",
+  "build": {
+    "includeDir": "include"
+  },
+  "dependencies": {
+    "Nanopb": "https://github.com/nanopb/nanopb/archive/0.4.92.zip"
+  }
+}

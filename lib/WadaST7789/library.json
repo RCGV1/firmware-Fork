@@ -1,0 +1,10 @@
+{
+  "name": "WadaST7789",
+  "version": "1.11.0",
+  "description": "ST7789/ST77xx subset of Adafruit ST7735 library 1.11.0; retains source license headers. Uses the ESP32 framework SD library.",
+  "build": {
+    "srcDir": ".",
+    "includeDir": ".",
+    "srcFilter": ["+<Adafruit_ST7789.cpp>", "+<Adafruit_ST77xx.cpp>"]
+  }
+}

@@ -1,3 +1,7 @@
+#ifdef WADA_MESHTASTIC
+#include "api/PacketAPI.h"
+#include "configuration.h"
+#endif
 #include "configuration.h"
 
 #if !MESHTASTIC_EXCLUDE_GPS
@@ -23,6 +27,7 @@
 #include "modules/NodeInfoModule.h"
 #include "modules/PositionModule.h"
 #include "modules/RoutingModule.h"
+#include "modules/StatusMessageModule.h"
 #include <assert.h>
 #include <string>
 
@@ -173,6 +178,25 @@ void MeshService::reloadConfig(int saveWhat)
         nodeDB->refreshCommittedLoraSlot();
     }
     nodeDB->saveToDisk(saveWhat);
+#if !MESHTASTIC_EXCLUDE_STATUS
+    if ((saveWhat & SEGMENT_MODULECONFIG) && statusMessageModule)
+        statusMessageModule->onConfigChanged();
+#endif
+#ifdef WADA_MESHTASTIC
+    if (packetAPI && (saveWhat & SEGMENT_MODULECONFIG)) {
+        meshtastic_FromRadio event{};
+        event.which_payload_variant = meshtastic_FromRadio_moduleConfig_tag;
+        event.moduleConfig.which_payload_variant = meshtastic_ModuleConfig_statusmessage_tag;
+        event.moduleConfig.payload_variant.statusmessage = moduleConfig.statusmessage;
+        packetAPI->publish(event);
+    }
+    if (packetAPI && (saveWhat & (SEGMENT_CONFIG | SEGMENT_CHANNELS))) {
+        meshtastic_ClientNotification event = {};
+        event.level = meshtastic_LogRecord_Level_INFO;
+        strcpy(event.message, "WADAMESH configuration changed; resync");
+        packetAPI->publishNotification(event);
+    }
+#endif
 }
 
 /// The owner User record just got updated, update our node DB and broadcast the info into the mesh
@@ -335,6 +359,14 @@ void MeshService::handleToRadio(meshtastic_MeshPacket &p)
         adminModule->noteOutgoingAdminRequest(p);
 #endif
 
+#ifdef WADA_MESHTASTIC
+    if (packetAPI && p.which_payload_variant == meshtastic_MeshPacket_decoded_tag &&
+        p.decoded.portnum == meshtastic_PortNum_TEXT_MESSAGE_APP) {
+        auto outgoing = p;
+        outgoing.from = nodeDB->getNodeNum();
+        packetAPI->publishPacket(outgoing);
+    }
+#endif
     // Send the packet into the mesh
     DEBUG_HEAP_BEFORE;
     auto a = packetPool.allocCopy(p);
@@ -373,6 +405,10 @@ ErrorCode MeshService::sendQueueStatusToPhone(const meshtastic_QueueStatus &qs, 
             releaseQueueStatusToPool(d);
     }
 
+#ifdef WADA_MESHTASTIC
+    if (packetAPI)
+        packetAPI->publishQueueStatus(*copied);
+#endif
     lastQueueStatus = *copied;
 
     res = toPhoneQueueStatusQueue.enqueue(copied, 0);
@@ -498,6 +534,10 @@ void MeshService::sendToPhone(meshtastic_MeshPacket *p)
         return;
     }
 
+#ifdef WADA_MESHTASTIC
+    if (packetAPI)
+        packetAPI->publishPacket(*p);
+#endif
 #ifdef ARCH_ESP32
 #if !MESHTASTIC_EXCLUDE_STOREFORWARD
     if (moduleConfig.store_forward.enabled && storeForwardModule && storeForwardModule->isServer() &&
@@ -571,6 +611,10 @@ void MeshService::sendRoutingErrorResponse(meshtastic_Routing_Error error, const
 
 void MeshService::sendClientNotification(meshtastic_ClientNotification *n)
 {
+#ifdef WADA_MESHTASTIC
+    if (packetAPI)
+        packetAPI->publishNotification(*n);
+#endif
     LOG_DEBUG("Send client notification to phone");
     if (toPhoneClientNotificationQueue.numFree() == 0) {
         LOG_WARN("ClientNotification queue full, discard oldest");

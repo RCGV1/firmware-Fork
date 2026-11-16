@@ -1,3 +1,10 @@
+#ifdef WADA_MESHTASTIC
+#include <WadaApp.h>
+void tftSetup()
+{
+    wadaStart();
+}
+#else
 #if HAS_TFT
 
 #include "SPILock.h"
@@ -436,4 +443,5 @@ void tftSetup(void)
     }
 }
 
+#endif
 #endif

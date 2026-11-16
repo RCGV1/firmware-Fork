@@ -879,7 +879,13 @@ void setup()
     // Initialize transmit history to persist broadcast throttle timers across reboots
     TransmitHistory::getInstance()->loadFromDisk();
 #if HAS_TFT
-    if (config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_COLOR) {
+    if (
+#ifdef WADA_MESHTASTIC
+        true
+#else
+        config.display.displaymode == meshtastic_Config_DisplayConfig_DisplayMode_COLOR
+#endif
+    ) {
         tftSetup();
     }
 #endif
@@ -1328,6 +1334,9 @@ extern meshtastic_DeviceMetadata getDeviceMetadata()
     deviceMetadata.hw_model = HW_VENDOR;
     deviceMetadata.hasRemoteHardware = moduleConfig.remote_hardware.enabled;
     deviceMetadata.excluded_modules = meshtastic_ExcludedModules_EXCLUDED_NONE;
+#if MESHTASTIC_EXCLUDE_STATUS
+    deviceMetadata.excluded_modules |= meshtastic_ExcludedModules_STATUSMESSAGE_CONFIG;
+#endif
 #if MESHTASTIC_EXCLUDE_REMOTEHARDWARE
     deviceMetadata.excluded_modules |= meshtastic_ExcludedModules_REMOTEHARDWARE_CONFIG;
 #endif

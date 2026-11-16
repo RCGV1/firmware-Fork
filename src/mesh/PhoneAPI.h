@@ -73,6 +73,7 @@ class PhoneAPI
     State state = STATE_SEND_NOTHING;
 
     uint8_t config_state = 0;
+    bool heartbeatReceived = false;
 
     // Timestamps of the last API packet per portnum. std::map keeps the libstdc++ hashtable out of small images.
     std::map<meshtastic_PortNum, uint32_t> lastPortNumToRadio;
@@ -220,6 +221,9 @@ class PhoneAPI
 #endif
 
   protected:
+    virtual bool hasPrivateReceiveQueue() const { return false; }
+    virtual bool readPrivateReceiveQueue(meshtastic_FromRadio &out, bool consume) { return false; }
+
     /// Our fromradio packet while it is being assembled
     meshtastic_FromRadio fromRadioScratch = {};
 

@@ -3,3 +3,12 @@
 *.bat text eol=crlf
 *.ps1 text eol=crlf
 *.{sh,[sS][hH]} text eol=lf
+
+# Preserve formatting in imported libraries and generated UI assets.
+lib/WadaApp/vendor/** linguist-vendored -whitespace
+lib/WadaApp/core/** linguist-vendored -whitespace
+lib/WadaApp/ed25519/** linguist-vendored -whitespace
+lib/WadaApp/lib/** linguist-vendored -whitespace
+lib/WadaApp/LICENSE -whitespace
+lib/WadaST7789/** linguist-vendored -whitespace
+test/wadamesh_host/miniz/** linguist-vendored -whitespace

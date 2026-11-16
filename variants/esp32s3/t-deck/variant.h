@@ -110,3 +110,12 @@
 #define SX126X_DIO3_TCXO_VOLTAGE 1.8
 // Internally the TTGO module hooks the SX1262-DIO2 in to control the TX/RX switch (which is the default for the sx1262interface
 // code)
+
+#ifdef WADA_MESHTASTIC
+#undef HAS_TRACKBALL
+#define HAS_TRACKBALL 0
+#undef HAS_PHYSICAL_KEYBOARD
+#define HAS_PHYSICAL_KEYBOARD 0
+#undef SD_SPI_FREQUENCY
+#define SD_SPI_FREQUENCY 4000000U
+#endif

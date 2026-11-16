@@ -1,0 +1,135 @@
+wadamesh
+Copyright (c) 2026 Kaj Schittecat and the wadamesh contributors
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See the LICENSE file for the full text.
+
+================================================================================
+Third-party components and their licenses
+================================================================================
+
+wadamesh incorporates and/or depends on the components below. Their own licenses
+are preserved and apply to those portions. MIT and Apache-2.0 are compatible with
+GPL-3.0; the combined work is distributed under GPL-3.0-or-later.
+
+MeshCore
+    Copyright (c) 2025 Scott Powell / rippleradios.com
+    MIT License — https://github.com/meshcore-dev/MeshCore
+    wadamesh derives its companion-radio application and core hooks from
+    MeshCore. The MeshCore-derived source files retain their MIT license
+    notices. The separate MeshCore fork that wadamesh builds against (the
+    Wi-Fi/BLE/UI hooks) is published under MIT, not GPL, so those hooks remain
+    upstreamable to MeshCore.
+
+LVGL
+    Copyright (c) LVGL Kft and contributors
+    MIT License — https://lvgl.io
+
+NimBLE-Arduino
+    Copyright (c) h2zero and contributors
+    Apache License 2.0 — https://github.com/h2zero/NimBLE-Arduino
+
+CayenneLPP
+    Copyright (c) Electronic Cats
+    MIT License — https://github.com/ElectronicCats/CayenneLPP
+
+RadioLib
+    Copyright (c) Jan Gromeš
+    MIT License — https://github.com/jgromes/RadioLib
+
+Noto Color Emoji (emoji glyph artwork, baked to image data)
+    Copyright (c) Google, Inc.
+    SIL Open Font License 1.1 — https://github.com/googlefonts/noto-emoji
+    Used as bundled image data with attribution.
+
+Touch UI bitmap fonts (generated LVGL font data)
+    Montserrat Project Authors and Noto Project Authors
+    SIL Open Font License 1.1 — see src/ui-touch/FONT_LICENSES.md
+    Generated reproducibly by scripts/build/gen-touch-fonts.sh from pinned,
+    hash-verified Montserrat and Noto font releases.
+
+ed25519 (bundled in lib/ed25519)
+    Orson Peters / orlp — public domain (Creative Commons Zero / zlib)
+    https://github.com/orlp/ed25519
+
+minimp3 (bundled in lib/minimp3)
+    lieff/minimp3 contributors — CC0 1.0 Universal
+    https://github.com/lieff/minimp3
+    Pinned at ea99364f61c14656440e8d77e9c233ccf3124633. The bundled header has
+    a small opt-in scratch-storage hook so the decoder workspace can live in
+    PSRAM; default upstream behavior is unchanged when that hook is not used.
+
+AsyncElegantOTA (vendored in arch/esp32/AsyncElegantOTA)
+    Copyright (c) Ayush Sharma — MIT License
+
+TFT_eSPI (T-LoRa Pager display backend)
+    Copyright (c) Bodmer — MIT / FreeBSD License — https://github.com/Bodmer/TFT_eSPI
+
+Adafruit GFX / ST7735_ST7789 (T-Deck / Heltec V4 display backend)
+    Copyright (c) Adafruit Industries — BSD License
+
+chsc6x (Heltec V4 CHSC6x cap-touch driver)
+    Quency-D — https://github.com/Quency-D/chsc6x
+
+SensorLib (T-LoRa Pager XL9555/BQ27220/AW9364/DRV2605/BHI260AP drivers)
+    Copyright (c) Lewis He — MIT License — https://github.com/lewisxhe/SensorLib
+    It bundles Bosch Sensortec's BHY2 SensorAPI (Copyright (c) 2023 Bosch
+    Sensortec GmbH, BSD-3-Clause) and the Bosch BHI260AP "Klio" firmware image
+    as distributed with SensorLib, which wadamesh uploads to the Pager's sensor
+    hub at first use.
+
+XPowersLib (T-LoRa Pager BQ25896 charger driver)
+    Copyright (c) Lewis He — MIT License — https://github.com/lewisxhe/XPowersLib
+
+ES8311 register sequence and clock-divider coefficients (T-LoRa Pager audio
+codec driver, variants/lilygo_tlora_pager/Es8311Codec.cpp; T-Display P4 audio
+driver, variants/tdisplay_p4/P4Audio.cpp)
+    Copyright (c) 2023-2026 Espressif Systems (Shanghai) CO LTD
+    Apache License 2.0 — https://github.com/espressif/esp-adf-libs and
+    https://github.com/espressif/esp-bsp (components/es8311)
+    wadamesh's drivers are original code (not copies of esp_codec_dev's
+    plugin/HAL architecture) but their ES8311 register addresses, startup/
+    power sequences, and MCLK clock-divider coefficients are derived from
+    Espressif's public es8311.c/es8311_reg.h; P4Audio.cpp additionally
+    re-bases the esp-bsp init flow onto Arduino Wire.
+
+ST7701S panel init list (SenseCAP Indicator display driver,
+variants/sensecap_indicator/IndicatorDisplay.cpp)
+    Copyright (c) Meshtastic
+    GPL-3.0 License — https://github.com/meshtastic/device-ui
+    The panel's second init command list (MADCTL vertical flip, SDIR
+    horizontal flip) is taken from Meshtastic device-ui's
+    include/graphics/LGFX/LGFX_INDICATOR.h (Panel_Indicator::getInitCommands).
+    The rest of the driver is original code on LovyanGFX's Panel_ST7701.
+
+LovyanGFX (display backend: RAK WisMesh Tap V2, SenseCAP Indicator and others)
+    Copyright (c) lovyan03 — FreeBSD License — https://github.com/lovyan03/LovyanGFX
+
+Camillia-MT (CrowPanel Advance 3.5 software-SPI microSD backend)
+    Copyright (c) 2025-2026 Michael A. Cojocari and contributors
+    GNU General Public License v3.0 or later
+    Adapted from src/sd_soft_spi.cpp; integrated with WadaMesh's filesystem
+    API and concurrent storage consumers.
+
+Camillia-MT (CrowPanel Advance 5.0 display, backlight and touch bring-up)
+    Copyright (c) 2025-2026 Michael A. Cojocari and contributors
+    GNU General Public License v3.0 or later
+    The RGB panel configuration, revision detection, backlight controller and
+    GT911 reset in variants/crowpanel_50/CrowPanel50Display.cpp are adapted
+    from src/hal/crowpanel_50_display.h and src/hal/hw_crowpanel_50.h.
+
+LilyGo cpp_bus_driver (T-Display P4 vibration motor, AW86224 haptic driver,
+variants/tdisplay_p4/P4Haptic.cpp and P4HapticWaveform.h)
+    Copyright (c) LILYGO
+    GPL-3.0 License (version 3 only; no "or later" grant) —
+    https://github.com/Llgok/cpp_bus_driver
+    The AW86224 register sequence (RAM-mode init, waveform load/verify,
+    playback, stop) is adapted from src/chip/i2c/aw862xx.cpp and re-based onto
+    Arduino Wire; the "12k_041230_235" RAM waveform library is copied verbatim
+    from src/chip/i2c/aw862xx_haptic_waveform_table.inc. Those two files keep
+    upstream's terms (SPDX GPL-3.0-only).
+
+This list is not exhaustive and is expanded as dependencies are vendored or
+added.

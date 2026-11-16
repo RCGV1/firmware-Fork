@@ -1,0 +1,13 @@
+{
+  "firmware": "332b5b0a2c4fec2896de3c5fa63f46d5cd05ea98",
+  "wadamesh": "26578cdc87896c78d533c00568846ecdd7dcfb2b",
+  "device-ui": "3d63783f2276cceebe78371f8e67529d118276bc",
+  "protobufs": "d4d978cfbc2eeb9d63f91546611ab9a78d3f811a",
+  "meshcore-reference": "6a8906212e9071efa4d3699a623b1a5ec8e2de6e",
+  "firmware_protobuf_submodule": "8d0ed0c135f91ad1d6f9c60bc341277d64946bce",
+  "android_behavior_reference": {
+    "repository": "meshtastic/Meshtastic-Android",
+    "revision": "846c3a103769d378c649ba37c911c224eac1f761",
+    "review_date": "2026-11-15"
+  }
+}

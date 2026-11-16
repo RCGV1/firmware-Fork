@@ -75,3 +75,9 @@ build/wasm/
 build/wasm-obj/
 build/wasm-*.log
 .emsdk/
+
+# WADAMESH build and host-test scratch files
+work/
+
+# WADAMESH standalone desktop CMake target
+!/desktop/CMakeLists.txt

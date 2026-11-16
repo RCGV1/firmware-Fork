@@ -1,0 +1,9 @@
+/.deps/
+/build*/
+/data/
+/*.app/
+/compile_commands.json
+/tests/*.o
+/tests/fixture-protocol
+/tests/keyboard-input
+/tests/*.tmp

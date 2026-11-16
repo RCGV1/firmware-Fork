@@ -53,7 +53,6 @@ void releaseFilesManifest(std::vector<meshtastic_FileInfo> &filesManifest)
 } // namespace
 
 // Flag to indicate a heartbeat was received and we should send queue status
-bool heartbeatReceived = false;
 
 #ifdef MESHTASTIC_PHONEAPI_ACCESS_CONTROL
 // Auth-slot table and status-slot table are both sized to the typical
@@ -1027,6 +1026,8 @@ size_t PhoneAPI::getFromRadio(uint8_t *buf)
         break;
 
     case STATE_SEND_PACKETS:
+        if (hasPrivateReceiveQueue() && readPrivateReceiveQueue(fromRadioScratch, true))
+            break;
         pauseBluetoothLogging = false;
         // Do we have a message from the mesh or packet from the local device?
         LOG_TRACE("FromRadio=STATE_SEND_PACKETS");
@@ -1148,7 +1149,7 @@ void PhoneAPI::sendConfigComplete()
         service->api_state = service->STATE_WIFI;
     } else if (api_type == TYPE_SERIAL) {
         service->api_state = service->STATE_SERIAL;
-    } else if (api_type == TYPE_PACKET) {
+    } else if (api_type == TYPE_PACKET && !hasPrivateReceiveQueue()) {
         service->api_state = service->STATE_PACKET;
     } else if (api_type == TYPE_HTTP) {
         service->api_state = service->STATE_HTTP;
@@ -1703,6 +1704,8 @@ bool PhoneAPI::available()
         prefetchNodeInfos();
         return true;
     case STATE_SEND_PACKETS: {
+        if (hasPrivateReceiveQueue())
+            return readPrivateReceiveQueue(fromRadioScratch, false) || replayPending();
         if (!queueStatusPacketForPhone)
             queueStatusPacketForPhone = service->getQueueStatusForPhone();
         if (!mqttClientProxyMessageForPhone)
